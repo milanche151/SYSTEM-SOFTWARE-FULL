@@ -9,7 +9,7 @@
 //enums
 typedef enum{
   NOTYPE,
-  FILE,
+  FILE_T,
   SECTION,
   OBJECT,
   FUNCTION
@@ -20,28 +20,32 @@ typedef enum{
 }symTableBind;
 typedef struct ST_forwardrefs{
     uint32_t patch;                       
-    ST_forwardrefs *nlink;// 
+    struct ST_forwardrefs *nlink;// 
 }ST_forwardrefs;
-//structs
-typedef struct SymbolTable{
+
+typedef struct SymTableRow{
  int num;
  char* name;
  uint32_t value;
  symTableType type;
- uint32_t size;
+ uint32_t offset;
  int defined;
  symTableBind bind;
- char* section;
+ char* ndx;
  ST_forwardrefs *flink;
-} symtable;
-
-
-//VECTOR_DECLARE(VecSymTbl,symtable);
+} SymTableRow;
+VECTOR_DECLARE(VecSymTbl,SymTableRow);
+static uint32_t symCounter = 0;
+VecSymTbl symbolTable;
+uint32_t sectionFinished;
+uint32_t programCounter; 
 
 //functions
-symtable* createSymSection(char* symbol,symTableType type,symTableBind);
-int inserIntoSymbolTable(symtable* sym);
+SymTableRow* createSymSection(char* symbol,symTableType type,symTableBind bind);
+int inserIntoSymbolTable(SymTableRow *sym);
+void printSymTable();
 int global(char* symlist);
+void initSymbolTable();
 
 
 #endif
