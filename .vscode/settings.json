@@ -4,6 +4,8 @@
     "string": "cpp",
     "string_view": "cpp",
     "inttypes.h": "c",
-    "assembler.h": "c"
+    "assembler.h": "c",
+    "test3.c": "c",
+    "vector.h": "c"
   }
 }
