@@ -35,16 +35,20 @@ typedef struct SymTableRow{
  ST_forwardrefs *flink;
 } SymTableRow;
 VECTOR_DECLARE(VecSymTbl,SymTableRow);
+VECTOR_DECLARE(VecString, char*);
 static uint32_t symCounter = 0;
 VecSymTbl symbolTable;
 uint32_t sectionFinished;
 uint32_t programCounter; 
 
 //functions
-SymTableRow* createSymSection(char* symbol,symTableType type,symTableBind bind);
+SymTableRow* createSymSection(char* symbol,symTableBind bind);
+SymTableRow* createSymbol(char* symbol,symTableBind bind,int defined);
 int inserIntoSymbolTable(SymTableRow *sym);
 void printSymTable();
-int global(char* symlist);
+int global(VecString symlist);
+int word(VecString symlist);
+int externSym(VecString symlist);
 void initSymbolTable();
 
 

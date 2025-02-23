@@ -22,7 +22,8 @@ VECTOR_DECLARE(VecString, char*);
 %token<string> SYMBOL
 %type<stringvec> SYMLIST
 %token<number> NUM 
-%token<string> COMMA
+%token<strin
+g> COMMA
 %token<string> REG
 %token<string> SREG
 
@@ -34,30 +35,29 @@ lines line | line;
 line:
 label | label directive | directive | ENDL;
 directive:
-GLOBAL SYMBOLLIST ENDL{
-  global($2);
-} |
 SECTION SYMBOL ENDL{
   symtable* sym = createSymSection($2,SECTION,LOCAL);
   if(sym) inserIntoSymbolTable(sym);
-
 }
 GLOBAL SYMLIST ENDL{
-
+  global($2);
 };
 label:
-SYMBOL COLON {
-//Asembler::label($1);
-} | 
 SYMBOL COLON ENDL{
-//Asembler::label($1);
-};
+ symtable* sym = createSymbol($2,SECTION,LOCAL);
+ if(sym) inserIntoSymbolTable(sym);
+} | 
+
+EXTERN SYMLIST ENDL{
+  externSym($2);
+}
+WORD SYMLIST {
+  word($2);
+}
 SYMLIST:
-//SYMBOL{$$=$1;}| SYMLIST COMMA SYMBOL{strcpy($$,$1);strcat($$,$2);strcat($$,$3);}
     SYMBOL              { VecStringCreate(&$$); VecStringPush(&$$, $1); }
   | SYMLIST ',' SYMBOL  { $$=$1; VecStringPush(&$$, $3); }
 ;
-
 %%
 
 void yyerror(const char* s) {
