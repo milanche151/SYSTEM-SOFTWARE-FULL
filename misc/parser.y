@@ -9,6 +9,8 @@ void yyerror(const char *s);
 
 #include "inc/vector.h"
 
+extern struct Assembler *assembler;
+
 VECTOR_DECLARE(VecString, char*);
 
 %}
@@ -29,35 +31,52 @@ g> COMMA
 
 %%
 program:
-lines;
-lines:
-lines line | line;
-line:
-label | label directive | directive | ENDL;
-directive:
-SECTION SYMBOL ENDL{
-  symtable* sym = createSymSection($2,SECTION,LOCAL);
-  if(sym) inserIntoSymbolTable(sym);
-}
-GLOBAL SYMLIST ENDL{
-  global($2);
-};
-label:
-SYMBOL COLON ENDL{
- symtable* sym = createSymbol($2,SECTION,LOCAL);
- if(sym) inserIntoSymbolTable(sym);
-} | 
+  lines;
 
-EXTERN SYMLIST ENDL{
-  externSym($2);
-}
-WORD SYMLIST {
-  word($2);
-}
+lines:
+  lines line | line;
+  
+line:
+  label | label directive | directive | ENDL;
+
+directive:
+  SECTION SYMBOL ENDL{
+    symtable* sym = createSymSection(assembler, $2,SECTION,LOCAL);
+    if(sym) inserIntoSymbolTable(assembler,sym);
+  }
+  |
+  GLOBAL SYMLIST ENDL{
+    global(assembler,$2);
+  }
+  |
+  WORD EXPR_LIST ENDL {
+    word(assembler,$2);
+  }
+  |
+  EXTERN SYMLIST ENDL{
+    externSym(assembler,$2);
+  };
+  ASCII SYMBOL ENDL{
+    ascii(assembler,SYMBOL);
+  }
+
+label:
+  SYMBOL COLON ENDL{
+    symtable* sym = createSymbol(assembler, $2,SECTION,LOCAL);
+    if(sym) inserIntoSymbolTable(assembler, sym);
+  };
+
 SYMLIST:
-    SYMBOL              { VecStringCreate(&$$); VecStringPush(&$$, $1); }
-  | SYMLIST ',' SYMBOL  { $$=$1; VecStringPush(&$$, $3); }
-;
+    SYMBOL              { $$ = VecStringCreate(); VecStringPush(&$$, $1); }
+  | SYMLIST ',' SYMBOL  { $$=$1; VecStringPush(&$$, $3); };
+
+EXPR_LIST:
+    SYMBOL{}
+  | NUMBER{}
+  | EXPR_LIST ',' SYMBOL{}
+  | EXPR_LIST ',' NUMBER{}
+  ;
+
 %%
 
 void yyerror(const char* s) {

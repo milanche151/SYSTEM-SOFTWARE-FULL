@@ -14,14 +14,14 @@ typedef struct Vector { \
 Vector Vector ## Create(void); \
 void Vector ## Destroy(Vector* vec); \
 void Vector ## Push(Vector* vec, typeof(Type) val); \
-
+bool Vector ## IsEmpty(const Vector* vec); \
 
 #define DEFAULT_VECTOR_CAP 4
 
 #define VECTOR_IMPLEMENT(Vector, Type) \
 Vector Vector ## Create(void){ \
   Vector vec = { \
-    .data = realloc(NULL, sizeof(typeof(Type)) * DEFAULT_VECTOR_CAP), \
+    .data = myRealloc(NULL, sizeof(typeof(Type)) * DEFAULT_VECTOR_CAP), \
     .size = 0, \
     .cap  = DEFAULT_VECTOR_CAP, \
   }; \
@@ -29,15 +29,18 @@ Vector Vector ## Create(void){ \
 } \
 \
 void Vector ## Destroy(Vector* vec){ \
-  free(vec->data); \
+  myFree(vec->data); \
 } \
 \
 void Vector ## Push(Vector* vec, typeof(Type) val){ \
   if(vec->cap <= vec->size){ \
     vec->cap *= 2; \
-    vec->data = realloc(vec->data, sizeof(typeof(Type)) * vec->cap); \
+    vec->data = myRealloc(vec->data, sizeof(typeof(Type)) * vec->cap); \
   } \
   vec->data[vec->size++] = val; \
+} \
+bool Vector ## IsEmpty(const Vector* vec) { \
+  return vec->size==0; \
 } \
 
 
