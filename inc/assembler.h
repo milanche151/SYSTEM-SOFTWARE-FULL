@@ -11,16 +11,16 @@
 VECTOR_DECLARE(VecString, char*);
 
 typedef enum{
-  NOTYPE,
-  FILE_T,
-  SECTION,
-  OBJECT,
-  FUNCTION
+  SYM_TBL_TYPE_NOTYPE,
+  SYM_TBL_TYPE_FILE_T,
+  SYM_TBL_TYPE_SECTION,
+  SYM_TBL_TYPE_OBJECT,
+  SYM_TBL_TYPE_FUNCTION
 }symTableType;
 
 typedef enum{
-  LOCAL,
-  GLOBAL
+  BIND_TYPE_LOCAL,
+  BIND_TYPE_GLOBAL
 }symTableBind;
 
 typedef struct ST_forwardrefs{

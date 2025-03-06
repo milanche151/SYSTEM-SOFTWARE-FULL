@@ -1,7 +1,7 @@
 default:
 	clear
-	flex -l lexer.l
-	bison -dv parser.y 
+	flex -l "misc/lexer.l"
+	bison -dv "misc/parser.y" 
 	gcc -o parser parser.tab.c lex.yy.c -lfl
 compile :
 	gcc -c ./src/assembler.c -o  asembler

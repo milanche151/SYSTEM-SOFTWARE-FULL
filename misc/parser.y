@@ -1,28 +1,31 @@
 %{
 #include <stdio.h>
 #include <string.h>
-#include "./inc/assembler.h"
+
 extern int yylex();
 extern FILE *yyin;
  
 void yyerror(const char *s);
 
-#include "inc/vector.h"
-
 extern struct Assembler *assembler;
 
-VECTOR_DECLARE(VecString, char*);
 
 %}
+%code requires{
+  #include "./inc/assembler.h"
+  #include "inc/vector.h"
+}
 %union{
   int number;
   char *string;
   VecString stringvec;
+  VecExpr exprvec;
 }
 
 %token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR VAL REGIND1 REGIND2 PCREL
 %token<string> SYMBOL
 %type<stringvec> SYMLIST
+%type<exprvec> EXPR_LIST
 %token<number> NUM 
 %token<strin
 g> COMMA
@@ -41,7 +44,7 @@ line:
 
 directive:
   SECTION SYMBOL ENDL{
-    symtable* sym = createSymSection(assembler, $2,SECTION,LOCAL);
+    SymTableRow* sym = createSymSection(assembler,$2,BIND_TYPE_LOCAL);
     if(sym) inserIntoSymbolTable(assembler,sym);
   }
   |
@@ -55,14 +58,15 @@ directive:
   |
   EXTERN SYMLIST ENDL{
     externSym(assembler,$2);
-  };
+  }
+  |
   ASCII SYMBOL ENDL{
     ascii(assembler,SYMBOL);
-  }
+  };
 
 label:
-  SYMBOL COLON ENDL{
-    symtable* sym = createSymbol(assembler, $2,SECTION,LOCAL);
+  SYMBOL ':' ENDL{
+    SymTableRow* sym = createSymbol(assembler, $1,SECTION,BIND_TYPE_LOCAL);
     if(sym) inserIntoSymbolTable(assembler, sym);
   };
 
@@ -71,10 +75,10 @@ SYMLIST:
   | SYMLIST ',' SYMBOL  { $$=$1; VecStringPush(&$$, $3); };
 
 EXPR_LIST:
-    SYMBOL{}
-  | NUMBER{}
-  | EXPR_LIST ',' SYMBOL{}
-  | EXPR_LIST ',' NUMBER{}
+    SYMBOL{ $$ = VecExprCreate(); VecExprPush(&$$, (Expression){.type = EXPR_TYPE_SYMBOL,.name = $1});}
+  | NUM{$$ = VecExprCreate(); VecExprPush(&$$, (Expression){.type = EXPR_TYPE_SYMBOL,.val = $1});}
+  | EXPR_LIST ',' SYMBOL{VecExprPush(&$$, (Expression){.type = EXPR_TYPE_SYMBOL,.name = $3});}
+  | EXPR_LIST ',' NUM{VecExprPush(&$$, (Expression){.type = EXPR_TYPE_SYMBOL,.val = $3});}
   ;
 
 %%

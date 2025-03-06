@@ -11,7 +11,7 @@ SymTableRow* createSymSection(struct Assembler* assembler, char* symbol,symTable
   SymTableRow* sym = (SymTableRow*)myMalloc(sizeof(SymTableRow));
   sym->name = symbol;  
   sym->defined = true;
-  sym->type = SECTION;
+  sym->type = SYM_TBL_TYPE_SECTION;
   sym->bind = bind;
   sym->num = num++;
   return sym;
@@ -21,7 +21,7 @@ SymTableRow* createSymbol(struct Assembler* assembler, char* symbol,symTableBind
   SymTableRow* sym = (SymTableRow*)myMalloc(sizeof(SymTableRow));
   sym->defined=defined;
   sym->name = symbol;  
-  sym->type = NOTYPE;
+  sym->type = SYM_TBL_TYPE_NOTYPE;
   sym->bind = bind;
   sym->num = num++;
 
@@ -43,7 +43,7 @@ void printSymTable(struct Assembler* assembler){
 
 void global(struct Assembler* assembler, VecString symlist){
  for(int i = 0; i < symlist.size; i++){
-    createSymbol(assembler,symlist.data[i],GLOBAL,0);
+    createSymbol(assembler,symlist.data[i],BIND_TYPE_GLOBAL,0);
  }
 }
 
@@ -67,7 +67,7 @@ void word(struct Assembler* assembler, VecExpr expresions){
 
 void externSym(struct Assembler* assembler,VecString symlist){
  for(int i = 0; i < symlist.size; i++){
-    createSymbol(assembler,symlist.data[i],GLOBAL,1);
+    createSymbol(assembler,symlist.data[i],BIND_TYPE_GLOBAL,1);
  }
 }
 
