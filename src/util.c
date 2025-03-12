@@ -1,4 +1,4 @@
-#include "../inc/util.h"
+#include "util.h"
 
 void* myMalloc(size_t size){
   void* ret;

@@ -12,8 +12,8 @@ extern struct Assembler *assembler;
 
 %}
 %code requires{
-  #include "./inc/assembler.h"
-  #include "inc/vector.h"
+  #include "assembler.h"
+  #include "vector.h"
 }
 %union{
   int number;
@@ -24,6 +24,7 @@ extern struct Assembler *assembler;
 
 %token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR VAL REGIND1 REGIND2 PCREL
 %token<string> SYMBOL
+%token<string> STRING
 %type<stringvec> SYMLIST
 %type<exprvec> EXPR_LIST
 %token<number> NUM 
@@ -40,32 +41,35 @@ lines:
   lines line | line;
   
 line:
-  label | label directive | directive | ENDL;
+  label ENDL
+  | label directive ENDL 
+  | directive ENDL
+  | ENDL;
 
 directive:
-  SECTION SYMBOL ENDL{
+  SECTION SYMBOL {
     SymTableRow* sym = createSymSection(assembler,$2,BIND_TYPE_LOCAL);
     if(sym) inserIntoSymbolTable(assembler,sym);
   }
   |
-  GLOBAL SYMLIST ENDL{
+  GLOBAL SYMLIST {
     global(assembler,$2);
   }
   |
-  WORD EXPR_LIST ENDL {
+  WORD EXPR_LIST {
     word(assembler,$2);
   }
   |
-  EXTERN SYMLIST ENDL{
+  EXTERN SYMLIST {
     externSym(assembler,$2);
   }
   |
-  ASCII SYMBOL ENDL{
-    ascii(assembler,SYMBOL);
+  ASCII STRING {
+    ascii(assembler,$2);
   };
 
 label:
-  SYMBOL ':' ENDL{
+  SYMBOL ':' {
     SymTableRow* sym = createSymbol(assembler, $1,SECTION,BIND_TYPE_LOCAL);
     if(sym) inserIntoSymbolTable(assembler, sym);
   };

@@ -1,4 +1,6 @@
-#include "../inc/assembler.h"
+#include "assembler.h"
+
+#include "util.h"
 
 VECTOR_IMPLEMENT(VecSymTbl,SymTableRow);
 VECTOR_IMPLEMENT(VecString, char*);
@@ -36,8 +38,8 @@ void initSymbolTable(struct Assembler* assembler){
 }
 
 void printSymTable(struct Assembler* assembler){
-  for(int i = 0; i < &assembler->symbolTable.size; i++){
-    printf("%d %s\n",&assembler->symbolTable.data[i].num,&assembler->symbolTable.data[i].name);
+  for(int i = 0; i < assembler->symbolTable.size; i++){
+    printf("%d %s\n", assembler->symbolTable.data[i].num, assembler->symbolTable.data[i].name);
   }
 }
 

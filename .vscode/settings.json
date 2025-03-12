@@ -6,6 +6,8 @@
     "inttypes.h": "c",
     "assembler.h": "c",
     "test3.c": "c",
-    "vector.h": "c"
+    "vector.h": "c",
+    "string.h": "c",
+    "parser.tab.h": "c"
   }
 }

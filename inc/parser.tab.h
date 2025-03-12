@@ -34,8 +34,8 @@
 /* Undocumented macros, especially those whose name start with YY_,
    are private implementation details.  Do not rely on them.  */
 
-#ifndef YY_YY_PARSER_TAB_H_INCLUDED
-# define YY_YY_PARSER_TAB_H_INCLUDED
+#ifndef YY_YY_INC_PARSER_TAB_H_INCLUDED
+# define YY_YY_INC_PARSER_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -46,10 +46,10 @@ extern int yydebug;
 /* "%code requires" blocks.  */
 #line 14 "misc/parser.y"
 
-  #include "./inc/assembler.h"
-  #include "inc/vector.h"
+  #include "assembler.h"
+  #include "vector.h"
 
-#line 53 "parser.tab.h"
+#line 53 "inc/parser.tab.h"
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -97,10 +97,11 @@ extern int yydebug;
     REGIND2 = 296,
     PCREL = 297,
     SYMBOL = 298,
-    NUM = 299,
-    COMMA = 300,
-    REG = 301,
-    SREG = 302
+    STRING = 299,
+    NUM = 300,
+    COMMA = 301,
+    REG = 302,
+    SREG = 303
   };
 #endif
 
@@ -115,7 +116,7 @@ union YYSTYPE
   VecString stringvec;
   VecExpr exprvec;
 
-#line 119 "parser.tab.h"
+#line 120 "inc/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -128,4 +129,4 @@ extern YYSTYPE yylval;
 
 int yyparse (void);
 
-#endif /* !YY_YY_PARSER_TAB_H_INCLUDED  */
+#endif /* !YY_YY_INC_PARSER_TAB_H_INCLUDED  */

@@ -92,6 +92,8 @@ struct Assembler {
   bool correct;
 };
 
+#include "parser.tab.h"
+
 struct Assembler assemblerCreate(void);
 
 void assemblerDestroy(struct Assembler *assembler);

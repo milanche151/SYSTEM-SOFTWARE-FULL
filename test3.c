@@ -1,5 +1,5 @@
 #include<stdio.h>
-#include "inc/assembler.h"
+#include "assembler.h"
 
 int main(){
   initSymbolTable();

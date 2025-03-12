@@ -52,6 +52,7 @@ csrwr {return CSRWR;}
 : {return COLON;}
 , {yylval.string=strdup(yytext);return COMMA;}
 [a-zA-Z_][a-zA-Z_0-9]* {yylval.string=strdup(yytext);return SYMBOL;}
+\"[a-zA-Z_0-9]*\" { yylval.string=strdup(yytext); return STRING; }
 [$] {return VAL;}
 [0][x][A-Fa-f0-9]+ {sscanf(yytext,"%x",&yylval.number);return NUM;}
 %r[0-15] {yylval.number=atoi(yytext+1);return REG;}
