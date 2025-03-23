@@ -15,7 +15,9 @@ typedef enum{
   SYM_TBL_TYPE_FILE_T,
   SYM_TBL_TYPE_SECTION,
   SYM_TBL_TYPE_OBJECT,
-  SYM_TBL_TYPE_FUNCTION
+  SYM_TBL_TYPE_FUNCTION,
+  
+  SYM_TBL_TYPE_COUNT,
 }symTableType;
 
 typedef enum{

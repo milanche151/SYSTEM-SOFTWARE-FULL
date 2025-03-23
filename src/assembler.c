@@ -42,9 +42,35 @@ void initSymbolTable(struct Assembler* assembler){
 }
 
 void printSymTable(const struct Assembler* assembler){
+
+  const char *symbol_type_print[SYM_TBL_TYPE_COUNT] = {
+    [SYM_TBL_TYPE_NOTYPE]   = "NoType",
+    [SYM_TBL_TYPE_FILE_T]   = "File",
+    [SYM_TBL_TYPE_SECTION]  = "Section",
+    [SYM_TBL_TYPE_OBJECT]   = "Object",
+    [SYM_TBL_TYPE_FUNCTION] = "Function",
+  };
+
   printf("Symtab:\n");
+  printf("%5s %10s %10s %10s %10s %10s\n",
+    "Num",
+    "Name",
+    "Value",
+    "Type",
+    "Offset",
+    "Status"
+  );
   for(int i = 0; i < assembler->symbolTable.size; i++){
-    printf("%d %s\n", assembler->symbolTable.data[i].num, assembler->symbolTable.data[i].name);
+    const SymTableRow *row = &assembler->symbolTable.data[i];
+
+    printf("%5d %10s %10d %10s %10d %10s\n",
+      row->num,
+      row->name,
+      row->value,
+      symbol_type_print[row->type],
+      row->offset,
+      row->defined ? "Defined" : "Not defined"
+    );
   }
 }
 
