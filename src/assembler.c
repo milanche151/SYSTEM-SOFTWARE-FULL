@@ -9,35 +9,40 @@ VECTOR_IMPLEMENT(VecExpr,Expression);
 VECTOR_IMPLEMENT(VecLine,Line);
 
 static int num = 0;
-SymTableRow* createSymSection(struct Assembler* assembler, char* symbol,symTableBind bind){
-  SymTableRow* sym = (SymTableRow*)myMalloc(sizeof(SymTableRow));
-  sym->name = symbol;  
-  sym->defined = true;
-  sym->type = SYM_TBL_TYPE_SECTION;
-  sym->bind = bind;
-  sym->num = num++;
+SymTableRow createSymSection(struct Assembler* assembler, char* symbol,symTableBind bind){
+  SymTableRow sym = {
+  .name = symbol,  
+  .defined = true,
+  .type = SYM_TBL_TYPE_SECTION,
+  .bind = bind,
+  .num = num++,
+  };
+
   return sym;
 }
 
-SymTableRow* createSymbol(struct Assembler* assembler, char* symbol,symTableBind bind,bool defined){
-  SymTableRow* sym = (SymTableRow*)myMalloc(sizeof(SymTableRow));
-  sym->defined=defined;
-  sym->name = symbol;  
-  sym->type = SYM_TBL_TYPE_NOTYPE;
-  sym->bind = bind;
-  sym->num = num++;
+SymTableRow createSymbol(struct Assembler* assembler, char* symbol,symTableBind bind,bool defined){
+  SymTableRow sym = {
+    .defined=defined,
+    .name = symbol,
+    .type = SYM_TBL_TYPE_NOTYPE,
+    .bind = bind,
+    .num = num++,
+  }; 
 
+  return sym;
 }
 
-void inserIntoSymbolTable(struct Assembler* assembler, SymTableRow* sym){
-     VecSymTblPush(&assembler->symbolTable, *sym);
+void insertIntoSymbolTable(struct Assembler* assembler, SymTableRow sym){
+  VecSymTblPush(&assembler->symbolTable, sym);
 }
 
 void initSymbolTable(struct Assembler* assembler){
   assembler->symbolTable=VecSymTblCreate();
 }
 
-void printSymTable(struct Assembler* assembler){
+void printSymTable(const struct Assembler* assembler){
+  printf("Symtab:\n");
   for(int i = 0; i < assembler->symbolTable.size; i++){
     printf("%d %s\n", assembler->symbolTable.data[i].num, assembler->symbolTable.data[i].name);
   }
@@ -45,7 +50,7 @@ void printSymTable(struct Assembler* assembler){
 
 void global(struct Assembler* assembler, VecString symlist){
  for(int i = 0; i < symlist.size; i++){
-    createSymbol(assembler,symlist.data[i],BIND_TYPE_GLOBAL,0);
+    insertIntoSymbolTable(assembler, createSymbol(assembler,symlist.data[i],BIND_TYPE_GLOBAL,0));
  }
 }
 
@@ -69,7 +74,7 @@ void word(struct Assembler* assembler, VecExpr expresions){
 
 void externSym(struct Assembler* assembler,VecString symlist){
  for(int i = 0; i < symlist.size; i++){
-    createSymbol(assembler,symlist.data[i],BIND_TYPE_GLOBAL,1);
+    insertIntoSymbolTable(assembler, createSymbol(assembler,symlist.data[i],BIND_TYPE_GLOBAL,1));
  }
 }
 
@@ -107,4 +112,66 @@ void assemblerDestroy(struct Assembler *assembler){
   }
   VecSectionDestroy(&assembler->sections);
   VecSymTblDestroy(&assembler->symbolTable);
+}
+
+
+
+static void exprPrint(const Expression* expr){
+  switch(expr->type){
+  case EXPR_TYPE_NUMBER:
+    printf("%d", expr->val);
+    break;
+
+  case EXPR_TYPE_SYMBOL:
+    printf("%s", expr->name);
+    break;
+
+  }
+}
+
+static void linePrint(const Line* line){
+  static const char *directiveNames[] = {
+    [DIRECTIVE_TYPE_WORD]  = ".word",
+    [DIRECTIVE_TYPE_SKIP]  = ".skip",
+    [DIRECTIVE_TYPE_ASCII] = ".ascii",
+  };
+  switch (line->type)
+  {
+  case LINE_TYPE_DIRECTIVE:
+    printf("%s ", directiveNames[line->directive.type]);
+    switch(line->directive.type){
+    case DIRECTIVE_TYPE_WORD:
+    case DIRECTIVE_TYPE_SKIP:{
+      for (size_t i = 0; i < line->directive.expressions.size; i++)
+      {
+        exprPrint(&line->directive.expressions.data[i]);
+      }
+    } break;
+
+    case DIRECTIVE_TYPE_ASCII:
+      break;
+      
+    }
+    break;
+  case LINE_TYPE_INSTRUCITON:
+    /* TODO */
+    break;
+  default:
+    break;
+  }
+  printf("\n");
+
+}
+
+void assemblerPrint(const struct Assembler* assembler){
+  printf("ASSEMBLER PRINT:\n");
+
+  printSymTable(assembler);
+  for(size_t i = 0; i<assembler->sections.size; i++){
+    const Section* section = &assembler->sections.data[i];
+    for(size_t j = 0; j < section->lines.size; j++){
+      const Line *currentLine = &section->lines.data[j];
+      linePrint(currentLine);
+    }
+  }
 }

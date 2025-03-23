@@ -95,14 +95,14 @@ struct Assembler {
 #include "parser.tab.h"
 
 struct Assembler assemblerCreate(void);
-
 void assemblerDestroy(struct Assembler *assembler);
+void assemblerPrint(const struct Assembler* assembler);
 
 //_________________________________________misc_functions________________________________________________
-SymTableRow* createSymSection(struct Assembler* assembler, char* symbol,symTableBind bind);
-SymTableRow* createSymbol(struct Assembler* assembler, char* symbol,symTableBind bind,bool defined);
-void inserIntoSymbolTable(struct Assembler* assembler, SymTableRow *sym);
-void printSymTable(struct Assembler* assembler);
+SymTableRow createSymSection(struct Assembler* assembler, char* symbol,symTableBind bind);
+SymTableRow createSymbol(struct Assembler* assembler, char* symbol,symTableBind bind,bool defined);
+void insertIntoSymbolTable(struct Assembler* assembler, SymTableRow sym);
+void printSymTable(const struct Assembler* assembler);
 void initSymbolTable(struct Assembler* assembler);
 
 //_________________________________________directives____________________________________________________
@@ -110,6 +110,7 @@ void global(struct Assembler* assembler, VecString symlist);
 void word(struct Assembler* assembler, VecExpr expresions);
 void ascii(struct Assembler* assembler, char* string);
 void externSym(struct Assembler* assembler, VecString symlist);
+
 
 
 #endif

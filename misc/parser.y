@@ -28,8 +28,7 @@ extern struct Assembler *assembler;
 %type<stringvec> SYMLIST
 %type<exprvec> EXPR_LIST
 %token<number> NUM 
-%token<strin
-g> COMMA
+%token<string> COMMA
 %token<string> REG
 %token<string> SREG
 
@@ -38,18 +37,21 @@ program:
   lines;
 
 lines:
-  lines line | line;
+  lines ENDL line 
+  | lines ENDL
+  | line
+  ;
   
 line:
-  label ENDL
-  | label directive ENDL 
-  | directive ENDL
-  | ENDL;
+  label
+  | label directive 
+  | directive
+  ;
 
 directive:
   SECTION SYMBOL {
-    SymTableRow* sym = createSymSection(assembler,$2,BIND_TYPE_LOCAL);
-    if(sym) inserIntoSymbolTable(assembler,sym);
+    SymTableRow sym = createSymSection(assembler,$2,BIND_TYPE_LOCAL);
+    insertIntoSymbolTable(assembler,sym);
   }
   |
   GLOBAL SYMLIST {
@@ -70,8 +72,8 @@ directive:
 
 label:
   SYMBOL ':' {
-    SymTableRow* sym = createSymbol(assembler, $1,SECTION,BIND_TYPE_LOCAL);
-    if(sym) inserIntoSymbolTable(assembler, sym);
+    SymTableRow sym = createSymbol(assembler, $1,SECTION,BIND_TYPE_LOCAL);
+    insertIntoSymbolTable(assembler, sym);
   };
 
 SYMLIST:

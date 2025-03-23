@@ -9,14 +9,14 @@
 [ \t];
 
 
-.global {return GLOBAL;}
-.extern {return EXTERN;}
-.section {return SECTION;}
-.word {return WORD;}
-.skip {return SKIP;}
-.equ {return EQU;}
-.ascii {return ASCII;}
-.end {return END;}
+".global" {return GLOBAL;}
+".extern" {return EXTERN;}
+".section" {return SECTION;}
+".word" {return WORD;}
+".skip" {return SKIP;}
+".equ" {return EQU;}
+".ascii" {return ASCII;}
+".end" {return END;}
 halt {return HALT;}
 int {return INT;}
 iret {return IRET;}
@@ -46,6 +46,7 @@ csrwr {return CSRWR;}
 %cause {yylval.number=2;return SREG;}
 %handler {yylval.number=1;return SREG;}
 %status {yylval.number=0;return SREG;}
+" " { }
 % {return PCREL;}
 \n {return ENDL;}
 [-]?[0-9]+ {yylval.number=atoi(yytext);return NUM;}
@@ -59,6 +60,6 @@ csrwr {return CSRWR;}
 "[" {return REGIND1;}
 "]" {return REGIND2;}
 [#][^\n]* ;
-. {printf("ERROR UNRECOGNIZED ELEMENT");exit(-1);}
+. {printf("ERROR UNRECOGNIZED ELEMENT %s", yytext);exit(-1);}
 %%
 
