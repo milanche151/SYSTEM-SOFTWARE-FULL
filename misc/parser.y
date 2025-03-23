@@ -50,8 +50,7 @@ line:
 
 directive:
   SECTION SYMBOL {
-    SymTableRow sym = createSymSection(assembler,$2,BIND_TYPE_LOCAL);
-    insertIntoSymbolTable(assembler,sym);
+    section(assembler, $2);
   }
   |
   GLOBAL SYMLIST {

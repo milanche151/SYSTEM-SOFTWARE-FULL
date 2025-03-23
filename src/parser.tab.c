@@ -576,8 +576,8 @@ static const yytype_int8 yytranslate[] =
 static const yytype_int8 yyrline[] =
 {
        0,    37,    37,    40,    41,    42,    46,    47,    48,    52,
-      57,    61,    65,    69,    74,    80,    81,    84,    85,    86,
-      87
+      56,    60,    64,    68,    73,    79,    80,    83,    84,    85,
+      86
 };
 #endif
 
@@ -1392,91 +1392,90 @@ yyreduce:
   case 9:
 #line 52 "misc/parser.y"
                  {
-    SymTableRow sym = createSymSection(assembler,(yyvsp[0].string),BIND_TYPE_LOCAL);
-    insertIntoSymbolTable(assembler,sym);
+    section(assembler, (yyvsp[0].string));
   }
-#line 1399 "src/parser.tab.c"
+#line 1398 "src/parser.tab.c"
     break;
 
   case 10:
-#line 57 "misc/parser.y"
+#line 56 "misc/parser.y"
                  {
     global(assembler,(yyvsp[0].stringvec));
   }
-#line 1407 "src/parser.tab.c"
+#line 1406 "src/parser.tab.c"
     break;
 
   case 11:
-#line 61 "misc/parser.y"
+#line 60 "misc/parser.y"
                  {
     word(assembler,(yyvsp[0].exprvec));
   }
-#line 1415 "src/parser.tab.c"
+#line 1414 "src/parser.tab.c"
     break;
 
   case 12:
-#line 65 "misc/parser.y"
+#line 64 "misc/parser.y"
                  {
     externSym(assembler,(yyvsp[0].stringvec));
   }
-#line 1423 "src/parser.tab.c"
+#line 1422 "src/parser.tab.c"
     break;
 
   case 13:
-#line 69 "misc/parser.y"
+#line 68 "misc/parser.y"
                {
     ascii(assembler,(yyvsp[0].string));
   }
-#line 1431 "src/parser.tab.c"
+#line 1430 "src/parser.tab.c"
     break;
 
   case 14:
-#line 74 "misc/parser.y"
+#line 73 "misc/parser.y"
              {
     SymTableRow sym = createSymbol(assembler, (yyvsp[-1].string),SECTION,BIND_TYPE_LOCAL);
     insertIntoSymbolTable(assembler, sym);
   }
-#line 1440 "src/parser.tab.c"
+#line 1439 "src/parser.tab.c"
     break;
 
   case 15:
-#line 80 "misc/parser.y"
+#line 79 "misc/parser.y"
                         { (yyval.stringvec) = VecStringCreate(); VecStringPush(&(yyval.stringvec), (yyvsp[0].string)); }
-#line 1446 "src/parser.tab.c"
+#line 1445 "src/parser.tab.c"
     break;
 
   case 16:
-#line 81 "misc/parser.y"
+#line 80 "misc/parser.y"
                         { (yyval.stringvec)=(yyvsp[-2].stringvec); VecStringPush(&(yyval.stringvec), (yyvsp[0].string)); }
-#line 1452 "src/parser.tab.c"
+#line 1451 "src/parser.tab.c"
     break;
 
   case 17:
-#line 84 "misc/parser.y"
+#line 83 "misc/parser.y"
           { (yyval.exprvec) = VecExprCreate(); VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_SYMBOL,.name = (yyvsp[0].string)});}
-#line 1458 "src/parser.tab.c"
+#line 1457 "src/parser.tab.c"
     break;
 
   case 18:
-#line 85 "misc/parser.y"
+#line 84 "misc/parser.y"
        {(yyval.exprvec) = VecExprCreate(); VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_SYMBOL,.val = (yyvsp[0].number)});}
-#line 1464 "src/parser.tab.c"
+#line 1463 "src/parser.tab.c"
     break;
 
   case 19:
-#line 86 "misc/parser.y"
+#line 85 "misc/parser.y"
                         {VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_SYMBOL,.name = (yyvsp[0].string)});}
-#line 1470 "src/parser.tab.c"
+#line 1469 "src/parser.tab.c"
     break;
 
   case 20:
-#line 87 "misc/parser.y"
+#line 86 "misc/parser.y"
                      {VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_SYMBOL,.val = (yyvsp[0].number)});}
-#line 1476 "src/parser.tab.c"
+#line 1475 "src/parser.tab.c"
     break;
 
 
-#line 1480 "src/parser.tab.c"
+#line 1479 "src/parser.tab.c"
 
       default: break;
     }
@@ -1708,7 +1707,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 90 "misc/parser.y"
+#line 89 "misc/parser.y"
 
 
 void yyerror(const char* s) {

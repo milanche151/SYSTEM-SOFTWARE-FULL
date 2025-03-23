@@ -106,6 +106,7 @@ void printSymTable(const struct Assembler* assembler);
 void initSymbolTable(struct Assembler* assembler);
 
 //_________________________________________directives____________________________________________________
+void section(struct Assembler* assembler, char* symbol);
 void global(struct Assembler* assembler, VecString symlist);
 void word(struct Assembler* assembler, VecExpr expresions);
 void ascii(struct Assembler* assembler, char* string);

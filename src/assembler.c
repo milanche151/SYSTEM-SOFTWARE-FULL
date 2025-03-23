@@ -48,6 +48,11 @@ void printSymTable(const struct Assembler* assembler){
   }
 }
 
+void section(struct Assembler* assembler, char* symbol){
+  SymTableRow sym = createSymSection(assembler,symbol,BIND_TYPE_LOCAL);
+  insertIntoSymbolTable(assembler,sym);
+}
+
 void global(struct Assembler* assembler, VecString symlist){
  for(int i = 0; i < symlist.size; i++){
     insertIntoSymbolTable(assembler, createSymbol(assembler,symlist.data[i],BIND_TYPE_GLOBAL,0));
