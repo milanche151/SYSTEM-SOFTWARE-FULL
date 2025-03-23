@@ -7,34 +7,159 @@ VECTOR_IMPLEMENT(VecString, char*);
 VECTOR_IMPLEMENT(VecSection, Section);
 VECTOR_IMPLEMENT(VecExpr,Expression);
 VECTOR_IMPLEMENT(VecLine,Line);
+VECTOR_IMPLEMENT(VecByte, unsigned char);
 
-static int num = 0;
-SymTableRow createSymSection(struct Assembler* assembler, char* symbol,symTableBind bind){
-  SymTableRow sym = {
-  .name = symbol,  
-  .defined = true,
-  .type = SYM_TBL_TYPE_SECTION,
-  .bind = bind,
-  .num = num++,
-  };
+#define EXTERN_SECTION 0
 
-  return sym;
+void insertSymSection(struct Assembler* assembler, char* name){
+  SymTableRow* found = NULL;
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
+    SymTableRow* current = &assembler->symbolTable.data[i];
+
+    if(strcmp(current->name, name) == 0) {
+      found = current;
+      break;
+    }
+  }
+
+  if(found != NULL){
+    printf("ERROR: Section symbol already exists.\n");
+    assembler->correct = false;
+  }
+  else {
+    VecSymTblPush(
+      &assembler->symbolTable,
+      (SymTableRow){
+        .name = name,
+        .section = assembler->symbolTable.size,
+        .value = 0,
+        .type = SYM_TBL_TYPE_SECTION,
+        .defined = true,
+        .bind = BIND_TYPE_LOCAL,
+      }
+    );
+  }
 }
 
-SymTableRow createSymbol(struct Assembler* assembler, char* symbol,symTableBind bind,bool defined){
-  SymTableRow sym = {
-    .defined=defined,
-    .name = symbol,
-    .type = SYM_TBL_TYPE_NOTYPE,
-    .bind = bind,
-    .num = num++,
-  }; 
+void insertSymLabel(struct Assembler* assembler, char* name){
+  SymTableRow* found = NULL;
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
+    SymTableRow* current = &assembler->symbolTable.data[i];
 
-  return sym;
+    if(strcmp(current->name, name) == 0) {
+      found = current;
+      break;
+    }
+  }
+
+  if(assembler->sections.size > 0){
+    Section *current_section = &assembler->sections.data[assembler->sections.size - 1];
+
+    if(found != NULL){
+      // okay
+      if(!found->defined) {
+        found->section = current_section->symtabIndex;
+        found->value = current_section->machineCode.size;
+        found->defined = true;
+      }
+      // error
+      else {
+        printf("ERROR: Label symbol already defined.\n");
+        assembler->correct = false;
+      }
+    }
+    else {
+      VecSymTblPush(
+        &assembler->symbolTable,
+        (SymTableRow){
+          .name = name,
+          .section = current_section->symtabIndex,
+          .value = current_section->machineCode.size,
+          .type = SYM_TBL_TYPE_NOTYPE,
+          .defined = true,
+          .bind = BIND_TYPE_LOCAL
+        }
+      );
+    }
+  }
+  // no section is open
+  else {
+    printf("ERROR: No section is open.\n");
+    assembler->correct = false;
+  }
 }
 
-void insertIntoSymbolTable(struct Assembler* assembler, SymTableRow sym){
-  VecSymTblPush(&assembler->symbolTable, sym);
+void insertSymExtern(struct Assembler* assembler, char *name){
+  SymTableRow* found = NULL;
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
+    SymTableRow* current = &assembler->symbolTable.data[i];
+
+    if(strcmp(current->name, name) == 0) {
+      found = current;
+      break;
+    }
+  }
+  
+  if(found != NULL){
+    printf("ERROR: Extern symbol already defined.\n");
+    assembler->correct = false;
+  }
+  else {
+    VecSymTblPush(
+      &assembler->symbolTable,
+      (SymTableRow){
+        .name = name,
+        .section = EXTERN_SECTION,
+        .value = 0,
+        .type = SYM_TBL_TYPE_NOTYPE,
+        .defined = true,
+        .bind = BIND_TYPE_LOCAL,
+      }
+    );
+  }
+}
+
+void declareSymGlobal(struct Assembler* assembler, char *name){
+  SymTableRow* found = NULL;
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
+    SymTableRow* current = &assembler->symbolTable.data[i];
+
+    if(strcmp(current->name, name) == 0) {
+      found = current;
+      break;
+    }
+  }
+
+  if(found != NULL){
+    // extern symbol CAN'T be declared global
+    if(found->section == EXTERN_SECTION){
+      printf("ERROR: Extern symbol can't be declared global.\n");
+      assembler->correct = false;
+    }
+    // section CAN'T be global
+    else if(found->type == SYM_TBL_TYPE_SECTION){
+      printf("ERROR: Section symbol can't be declared global.\n");
+      assembler->correct = false;
+    }
+    // okay
+    else {
+      found->bind = BIND_TYPE_GLOBAL;
+    }
+  }
+  else {
+
+    VecSymTblPush(
+      &assembler->symbolTable,
+      (SymTableRow){
+        .name = name,
+        .section = 0,
+        .value = 0,
+        .type = SYM_TBL_TYPE_NOTYPE,
+        .defined = false,
+        .bind = BIND_TYPE_GLOBAL
+      }
+    );
+  }
 }
 
 void initSymbolTable(struct Assembler* assembler){
@@ -55,38 +180,44 @@ void printSymTable(const struct Assembler* assembler){
   printf("%5s %10s %10s %10s %10s %10s\n",
     "Num",
     "Name",
+    "Section",
     "Value",
     "Type",
-    "Offset",
     "Status"
   );
-  for(int i = 0; i < assembler->symbolTable.size; i++){
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
     const SymTableRow *row = &assembler->symbolTable.data[i];
 
-    printf("%5d %10s %10d %10s %10d %10s\n",
-      row->num,
+    printf("%5lu %10s %10lu %10d %10s %10s\n",
+      i,
       row->name,
+      row->section,
       row->value,
       symbol_type_print[row->type],
-      row->offset,
-      row->defined ? "Defined" : "Not defined"
+      row->defined ? "Defined" : "Not def"
     );
   }
 }
 
 void section(struct Assembler* assembler, char* symbol){
-  SymTableRow sym = createSymSection(assembler,symbol,BIND_TYPE_LOCAL);
-  insertIntoSymbolTable(assembler,sym);
+  insertSymSection(assembler,symbol);
+
+  Section new_section = {
+    .symtabIndex = assembler->symbolTable.size - 1,
+    .machineCode = VecByteCreate(),
+    .lines = VecLineCreate(),
+  };
+  VecSectionPush(&assembler->sections, new_section);
 }
 
 void global(struct Assembler* assembler, VecString symlist){
  for(int i = 0; i < symlist.size; i++){
-    insertIntoSymbolTable(assembler, createSymbol(assembler,symlist.data[i],BIND_TYPE_GLOBAL,0));
+    declareSymGlobal(assembler, symlist.data[i]);
  }
 }
 
 void word(struct Assembler* assembler, VecExpr expresions){
-  if(assembler,VecSectionIsEmpty(&assembler->sections)){
+  if(VecSectionIsEmpty(&assembler->sections)){
     assembler->correct=false;
   }
   else{
@@ -98,15 +229,17 @@ void word(struct Assembler* assembler, VecExpr expresions){
         .expressions = expresions,
       },
     };
-    current_section->locationCounter+=4;
+    for(int i = 0; i < 4; i++){
+      VecBytePush(&current_section->machineCode, 0);
+    }
     VecLinePush(&current_section->lines,line);
   }
 }
 
 void externSym(struct Assembler* assembler,VecString symlist){
- for(int i = 0; i < symlist.size; i++){
-    insertIntoSymbolTable(assembler, createSymbol(assembler,symlist.data[i],BIND_TYPE_GLOBAL,1));
- }
+  for(int i = 0; i < symlist.size; i++){
+    insertSymExtern(assembler, symlist.data[i]);
+  }
 }
 
 void ascii(struct Assembler* assembler, char* string){
@@ -118,17 +251,25 @@ void ascii(struct Assembler* assembler, char* string){
         .string = string,
       },
     };
-    current_section->locationCounter+=4;
+    for(char *p = string; *p != 0; p++){
+      if(*p != '"') VecBytePush(&current_section->machineCode, *p);
+    }
+    VecBytePush(&current_section->machineCode, 0);
+    
     VecLinePush(&current_section->lines,line);
 }
 
 struct Assembler
 assemblerCreate(void){
-  return (struct Assembler){
+  struct Assembler assembler = (struct Assembler){
     .sections = VecSectionCreate(),
     .symbolTable = VecSymTblCreate(),
     .correct = true,
   };
+
+  insertSymSection(&assembler,"*UNDEF*");
+  
+  return assembler;
 }
 
 void assemblerDestroy(struct Assembler *assembler){

@@ -1,7 +1,11 @@
+.extern a
+.extern b
 .section test
 
-
-
-
-.section test2
-.extern b
+c:
+  .word 4
+d:
+  .word 8
+e: 
+  .ascii "abcdefg"
+f:

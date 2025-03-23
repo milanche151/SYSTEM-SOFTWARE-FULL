@@ -22,7 +22,7 @@ extern struct Assembler *assembler;
   VecExpr exprvec;
 }
 
-%token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR VAL REGIND1 REGIND2 PCREL
+%token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR
 %token<string> SYMBOL
 %token<string> STRING
 %type<stringvec> SYMLIST
@@ -71,8 +71,7 @@ directive:
 
 label:
   SYMBOL ':' {
-    SymTableRow sym = createSymbol(assembler, $1,SECTION,BIND_TYPE_LOCAL);
-    insertIntoSymbolTable(assembler, sym);
+    insertSymLabel(assembler, $1);
   };
 
 SYMLIST:

@@ -1061,7 +1061,7 @@ YY_RULE_SETUP
 case 40:
 YY_RULE_SETUP
 #line 50 "misc/lexer.l"
-{return PCREL;}
+{return '%';}
 	YY_BREAK
 case 41:
 /* rule 41 can match eol */
@@ -1077,12 +1077,12 @@ YY_RULE_SETUP
 case 43:
 YY_RULE_SETUP
 #line 53 "misc/lexer.l"
-{return COLON;}
+{return ':' ;}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
 #line 54 "misc/lexer.l"
-{yylval.string=strdup(yytext);return COMMA;}
+{yylval.string=strdup(yytext);return ',' ;}
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
@@ -1097,7 +1097,7 @@ YY_RULE_SETUP
 case 47:
 YY_RULE_SETUP
 #line 57 "misc/lexer.l"
-{return VAL;}
+{return '$';}
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
@@ -1112,12 +1112,12 @@ YY_RULE_SETUP
 case 50:
 YY_RULE_SETUP
 #line 60 "misc/lexer.l"
-{return REGIND1;}
+{return '[';}
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
 #line 61 "misc/lexer.l"
-{return REGIND2;}
+{return ']';}
 	YY_BREAK
 case 52:
 YY_RULE_SETUP

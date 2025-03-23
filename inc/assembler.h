@@ -16,7 +16,7 @@ typedef enum{
   SYM_TBL_TYPE_SECTION,
   SYM_TBL_TYPE_OBJECT,
   SYM_TBL_TYPE_FUNCTION,
-  
+
   SYM_TBL_TYPE_COUNT,
 }symTableType;
 
@@ -25,21 +25,19 @@ typedef enum{
   BIND_TYPE_GLOBAL
 }symTableBind;
 
-typedef struct ST_forwardrefs{
-    uint32_t patch;                       
-    struct ST_forwardrefs *nlink;// 
-}ST_forwardrefs;
+typedef struct ForwardRef{
+  size_t section;
+  uint32_t offset;
+  char *name;
+} ForwardRef;
 
 typedef struct SymTableRow{
- int num;
  char* name;
+ size_t section;
  uint32_t value;
  symTableType type;
- uint32_t offset;
  bool defined;
  symTableBind bind;
- char* ndx;
- ST_forwardrefs *flink;
 } SymTableRow;
 
 VECTOR_DECLARE(VecSymTbl,SymTableRow);
@@ -79,10 +77,12 @@ typedef struct Line{
 
 VECTOR_DECLARE(VecLine, Line);
 
+VECTOR_DECLARE(VecByte, unsigned char);
+
 typedef struct Section
 {
-  char* name;
-  uint32_t locationCounter;
+  size_t symtabIndex;
+  VecByte machineCode;
   VecLine lines;
 }Section;
 
@@ -101,9 +101,11 @@ void assemblerDestroy(struct Assembler *assembler);
 void assemblerPrint(const struct Assembler* assembler);
 
 //_________________________________________misc_functions________________________________________________
-SymTableRow createSymSection(struct Assembler* assembler, char* symbol,symTableBind bind);
-SymTableRow createSymbol(struct Assembler* assembler, char* symbol,symTableBind bind,bool defined);
-void insertIntoSymbolTable(struct Assembler* assembler, SymTableRow sym);
+void insertSymSection(struct Assembler* assembler, char* name);
+void insertSymLabel(struct Assembler* assembler, char* name);
+void insertSymExtern(struct Assembler* assembler, char *name);
+void declareSymGlobal(struct Assembler* assembler, char *name);
+
 void printSymTable(const struct Assembler* assembler);
 void initSymbolTable(struct Assembler* assembler);
 

@@ -92,16 +92,12 @@ extern int yydebug;
     ST = 291,
     CSRRD = 292,
     CSRWR = 293,
-    VAL = 294,
-    REGIND1 = 295,
-    REGIND2 = 296,
-    PCREL = 297,
-    SYMBOL = 298,
-    STRING = 299,
-    NUM = 300,
-    COMMA = 301,
-    REG = 302,
-    SREG = 303
+    SYMBOL = 294,
+    STRING = 295,
+    NUM = 296,
+    COMMA = 297,
+    REG = 298,
+    SREG = 299
   };
 #endif
 
@@ -116,7 +112,7 @@ union YYSTYPE
   VecString stringvec;
   VecExpr exprvec;
 
-#line 120 "inc/parser.tab.h"
+#line 116 "inc/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
