@@ -177,7 +177,7 @@ void printSymTable(const struct Assembler* assembler){
   };
 
   printf("Symtab:\n");
-  printf("%5s %10s %10s %10s %10s %10s\n",
+  printf("%-5s %-10s %-10s %-10s %-10s %-10s\n",
     "Num",
     "Name",
     "Section",
@@ -188,7 +188,7 @@ void printSymTable(const struct Assembler* assembler){
   for(size_t i = 0; i < assembler->symbolTable.size; i++){
     const SymTableRow *row = &assembler->symbolTable.data[i];
 
-    printf("%5lu %10s %10lu %10d %10s %10s\n",
+    printf("%-5lu %-10s %-10lu %-10d %-10s %-10s\n",
       i,
       row->name,
       row->section,
@@ -337,7 +337,6 @@ static void linePrint(const Line* line){
 
 void assemblerPrint(const struct Assembler* assembler){
   printf("ASSEMBLER PRINT:\n");
-
   printSymTable(assembler);
   for(size_t i = 0; i<assembler->sections.size; i++){
     const Section* section = &assembler->sections.data[i];
