@@ -5,7 +5,7 @@
 c:
   .word 4
 d:
-  .word 8
+  .word c
 e: 
   .ascii "abcdefg"
 f:

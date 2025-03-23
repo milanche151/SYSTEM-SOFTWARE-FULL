@@ -1449,7 +1449,7 @@ yyreduce:
 
   case 18:
 #line 83 "misc/parser.y"
-       {(yyval.exprvec) = VecExprCreate(); VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_SYMBOL,.val = (yyvsp[0].number)});}
+       {(yyval.exprvec) = VecExprCreate(); VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_NUMBER,.val = (yyvsp[0].number)});}
 #line 1454 "src/parser.tab.c"
     break;
 
@@ -1461,7 +1461,7 @@ yyreduce:
 
   case 20:
 #line 85 "misc/parser.y"
-                     {VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_SYMBOL,.val = (yyvsp[0].number)});}
+                     {VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_NUMBER,.val = (yyvsp[0].number)});}
 #line 1466 "src/parser.tab.c"
     break;
 
