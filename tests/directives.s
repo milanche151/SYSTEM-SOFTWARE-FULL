@@ -3,7 +3,7 @@
 .section test
 
 c:
-  .word 4
+  .word 0x12345678
 d:
   .word c
 e: 

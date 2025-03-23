@@ -216,7 +216,7 @@ void global(struct Assembler* assembler, VecString symlist){
  }
 }
 
-void word(struct Assembler* assembler, VecExpr expresions){
+void word(struct Assembler* assembler, VecExpr expressions){
   if(VecSectionIsEmpty(&assembler->sections)){
     assembler->correct=false;
   }
@@ -226,11 +226,22 @@ void word(struct Assembler* assembler, VecExpr expresions){
       .type = LINE_TYPE_DIRECTIVE,
       .directive = {
         .type = DIRECTIVE_TYPE_WORD,
-        .expressions = expresions,
+        .expressions = expressions,
       },
     };
-    for(int i = 0; i < 4; i++){
-      VecBytePush(&current_section->machineCode, 0);
+
+    for(size_t i = 0; i < expressions.size; i++){
+      Expression* current_expr = &expressions.data[i];
+      if(current_expr->type == EXPR_TYPE_SYMBOL){
+        for(int i = 0; i < 4; i++){
+          VecBytePush(&current_section->machineCode, 0);
+        }
+      }
+      else {
+        for(int i = 0; i < 4; i++){
+          VecBytePush(&current_section->machineCode, current_expr->val >> (8 * i));
+        }
+      }
     }
     VecLinePush(&current_section->lines,line);
   }
@@ -343,6 +354,17 @@ void assemblerPrint(const struct Assembler* assembler){
     for(size_t j = 0; j < section->lines.size; j++){
       const Line *currentLine = &section->lines.data[j];
       linePrint(currentLine);
+    }
+  }
+  printf("MACHINE CODE:\n");
+  for(size_t i = 0; i < assembler->sections.size; i++){
+    const Section* section = &assembler->sections.data[i];
+    printf("Section index = %lu\n", section->symtabIndex);
+    printf("Section size = %lu\n", section->machineCode.size);
+    for(size_t j = 0; j < section->machineCode.size; j++){
+      printf("%02x", section->machineCode.data[j]);
+      if(j % 8 == 7) printf("\n");
+      else printf(" ");
     }
   }
 }

@@ -49,7 +49,7 @@ typedef enum ExprType{
 
 typedef struct Expression{
   ExpressionType type;
-  int val;
+  uint32_t val;
   char* name;
 } Expression;
 
