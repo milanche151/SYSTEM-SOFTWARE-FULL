@@ -14,6 +14,7 @@
       "cwd": "${workspaceFolder}",
       "environment": [],
       "externalConsole": false,
+
       "MIMode": "gdb",
       "setupCommands": [
           {
@@ -26,6 +27,7 @@
               "text": "-gdb-set disassembly-flavor intel",
               "ignoreFailures": true
           }
+
       ],
     }
 
