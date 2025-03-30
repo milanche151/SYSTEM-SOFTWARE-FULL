@@ -21,15 +21,41 @@ typedef enum{
 }symTableType;
 
 typedef enum{
+  FORWARD_REF_DATA32,
+  //FORWARD_REF_PC12,
+
+  FORWARD_REF_TYPE_COUNT,
+
+}ForwardRefType;
+
+typedef struct ForwardRef{
+  uint32_t offset;
+  ForwardRefType type;
+  const char *name;
+  int addend;
+} ForwardRef;
+
+VECTOR_DECLARE(VecForwardRef, ForwardRef);
+
+typedef enum RelocationType{
+  RELOCATION_TYPE_DATA32,
+
+  RELOACTION_TYPE_COUNT,
+}RelocationType;
+
+typedef struct Relocation{
+  uint32_t offset;
+  ForwardRefType type;
+  size_t symbolIndex;
+  int addend;
+} Relocation;
+
+VECTOR_DECLARE(VecRelocation, Relocation);
+
+typedef enum{
   BIND_TYPE_LOCAL,
   BIND_TYPE_GLOBAL
 }symTableBind;
-
-typedef struct ForwardRef{
-  size_t section;
-  uint32_t offset;
-  char *name;
-} ForwardRef;
 
 typedef struct SymTableRow{
  char* name;
@@ -84,6 +110,9 @@ typedef struct Section
   size_t symtabIndex;
   VecByte machineCode;
   VecLine lines;
+
+  VecForwardRef forwardRefs;
+  VecRelocation relocations;
 }Section;
 
 VECTOR_DECLARE(VecSection, Section);

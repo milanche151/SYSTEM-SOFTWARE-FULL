@@ -162,6 +162,19 @@ void declareSymGlobal(struct Assembler* assembler, char *name){
   }
 }
 
+static SymTableRow *SymTableFind(const struct Assembler *assembler, const char *name){
+  SymTableRow* found = NULL;
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
+    SymTableRow* current = &assembler->symbolTable.data[i];
+
+    if(strcmp(current->name, name) == 0) {
+      found = current;
+      break;
+    }
+  }
+  return found;
+}
+
 void initSymbolTable(struct Assembler* assembler){
   assembler->symbolTable=VecSymTblCreate();
 }
@@ -206,6 +219,8 @@ void section(struct Assembler* assembler, char* symbol){
     .symtabIndex = assembler->symbolTable.size - 1,
     .machineCode = VecByteCreate(),
     .lines = VecLineCreate(),
+    .forwardRefs = VecForwardRefCreate(),
+    .relocations = VecRelocationCreate(),
   };
   VecSectionPush(&assembler->sections, new_section);
 }
@@ -233,9 +248,30 @@ void word(struct Assembler* assembler, VecExpr expressions){
     for(size_t i = 0; i < expressions.size; i++){
       Expression* current_expr = &expressions.data[i];
       if(current_expr->type == EXPR_TYPE_SYMBOL){
+        SymTableRow* symbol = SymTableFind(assembler,current_expr->name);
+        if(symbol){
+          Relocation relocation = {
+            .type = RELOCATION_TYPE_DATA32,
+            .symbolIndex = symbol->section,
+            .addend = symbol->value,
+            .offset = current_section->machineCode.size,
+          };
+          VecRelocationPush(&current_section->relocations,relocation);
+        }
+        else {
+          ForwardRef forwardRef = {
+            .type = FORWARD_REF_DATA32,
+            .name = symbol->name,
+            .addend = 0,
+            .offset = current_section->machineCode.size
+          };
+          VecForwardRefPush(&current_section->forwardRefs,forwardRef);
+        }
+
         for(int i = 0; i < 4; i++){
           VecBytePush(&current_section->machineCode, 0);
         }
+        
       }
       else {
         for(int i = 0; i < 4; i++){
