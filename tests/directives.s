@@ -1,11 +1,23 @@
 .extern a
 .extern b
-.section test
+
+.section text
 
 c:
   .word 0x12345678
 d:
   .word c
 e: 
-  .ascii "abcdefg"
+  .ascii "abcdefghi"
+
+.section data
+
 f:
+  .word a
+
+  .word g
+
+g:
+  .ascii "abc"
+.end
+h:

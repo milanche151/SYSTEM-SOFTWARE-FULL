@@ -34,7 +34,8 @@ extern struct Assembler *assembler;
 
 %%
 program:
-  lines;
+  lines { AssemblerEndOfFile(assembler); }
+  ;
 
 lines:
   lines ENDL line 
@@ -67,7 +68,14 @@ directive:
   |
   ASCII STRING {
     ascii(assembler,$2);
-  };
+  }
+  |
+  END {
+   
+    AssemblerEndOfFile(assembler);
+    YYACCEPT;
+  }
+  ;
 
 label:
   SYMBOL ':' {

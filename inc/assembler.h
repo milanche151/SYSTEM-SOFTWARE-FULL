@@ -29,7 +29,7 @@ typedef enum{
 }ForwardRefType;
 
 typedef struct ForwardRef{
-  uint32_t offset;
+  size_t offset;
   ForwardRefType type;
   const char *name;
   int addend;
@@ -44,7 +44,7 @@ typedef enum RelocationType{
 }RelocationType;
 
 typedef struct Relocation{
-  uint32_t offset;
+  size_t offset;
   ForwardRefType type;
   size_t symbolIndex;
   int addend;
@@ -128,6 +128,7 @@ struct Assembler {
 struct Assembler assemblerCreate(void);
 void assemblerDestroy(struct Assembler *assembler);
 void assemblerPrint(const struct Assembler* assembler);
+void AssemblerEndOfFile(struct Assembler *assembler);
 
 //_________________________________________misc_functions________________________________________________
 void insertSymSection(struct Assembler* assembler, char* name);
@@ -144,7 +145,5 @@ void global(struct Assembler* assembler, VecString symlist);
 void word(struct Assembler* assembler, VecExpr expresions);
 void ascii(struct Assembler* assembler, char* string);
 void externSym(struct Assembler* assembler, VecString symlist);
-
-
 
 #endif
