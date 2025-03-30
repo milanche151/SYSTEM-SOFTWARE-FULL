@@ -9,14 +9,14 @@
 [ \t];
 
 
-.global {return GLOBAL;}
-.extern {return EXTERN;}
-.section {return SECTION;}
-.word {return WORD;}
-.skip {return SKIP;}
-.equ {return EQU;}
-.ascii {return ASCII;}
-.end {return END;}
+".global" {return GLOBAL;}
+".extern" {return EXTERN;}
+".section" {return SECTION;}
+".word" {return WORD;}
+".skip" {return SKIP;}
+".equ" {return EQU;}
+".ascii" {return ASCII;}
+".end" {return END;}
 halt {return HALT;}
 int {return INT;}
 iret {return IRET;}
@@ -46,18 +46,20 @@ csrwr {return CSRWR;}
 %cause {yylval.number=2;return SREG;}
 %handler {yylval.number=1;return SREG;}
 %status {yylval.number=0;return SREG;}
-% {return PCREL;}
+" " { }
+% {return '%';}
 \n {return ENDL;}
 [-]?[0-9]+ {yylval.number=atoi(yytext);return NUM;}
-: {return COLON;}
-, {yylval.string=strdup(yytext);return COMMA;}
-[a-zA-Z_]+[0-9]* {yylval.string=strdup(yytext);return SYMBOL;}
-[$] {return VAL;}
+: {return ':' ;}
+, {yylval.string=strdup(yytext);return ',' ;}
+[a-zA-Z_][a-zA-Z_0-9]* {yylval.string=strdup(yytext);return SYMBOL;}
+\"[a-zA-Z_0-9]*\" { yylval.string=strdup(yytext); return STRING; }
+"$" {return '$';}
 [0][x][A-Fa-f0-9]+ {sscanf(yytext,"%x",&yylval.number);return NUM;}
 %r[0-15] {yylval.number=atoi(yytext+1);return REG;}
-"[" {return REGIND1;}
-"]" {return REGIND2;}
+"[" {return '[';}
+"]" {return ']';}
 [#][^\n]* ;
-. {printf("ERROR UNRECOGNIZED ELEMENT");exit(-1);}
+. {printf("ERROR UNRECOGNIZED ELEMENT %s", yytext);exit(-1);}
 %%
 

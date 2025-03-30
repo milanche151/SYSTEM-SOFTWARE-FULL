@@ -1,0 +1,408 @@
+Terminals unused in grammar
+
+    COLON
+    SKIP
+    EQU
+    END
+    HALT
+    INT
+    IRET
+    CALL
+    RET
+    JMP
+    BEQ
+    BNE
+    BGT
+    PUSH
+    POP
+    XCHG
+    ADD
+    SUB
+    MUL
+    DIV
+    NOT
+    AND
+    OR
+    XOR
+    SHL
+    SHR
+    LD
+    ST
+    CSRRD
+    CSRWR
+    COMMA
+    REG
+    SREG
+
+
+Grammar
+
+    0 $accept: program $end
+
+    1 program: lines
+
+    2 lines: lines ENDL line
+    3      | lines ENDL
+    4      | line
+
+    5 line: label
+    6     | label directive
+    7     | directive
+
+    8 directive: SECTION SYMBOL
+    9          | GLOBAL SYMLIST
+   10          | WORD EXPR_LIST
+   11          | EXTERN SYMLIST
+   12          | ASCII STRING
+
+   13 label: SYMBOL ':'
+
+   14 SYMLIST: SYMBOL
+   15        | SYMLIST ',' SYMBOL
+
+   16 EXPR_LIST: SYMBOL
+   17          | NUM
+   18          | EXPR_LIST ',' SYMBOL
+   19          | EXPR_LIST ',' NUM
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    ',' (44) 15 18 19
+    ':' (58) 13
+    error (256)
+    GLOBAL (258) 9
+    EXTERN (259) 11
+    ENDL (260) 2 3
+    SECTION (261) 8
+    COLON (262)
+    WORD (263) 10
+    SKIP (264)
+    ASCII (265) 12
+    EQU (266)
+    END (267)
+    HALT (268)
+    INT (269)
+    IRET (270)
+    CALL (271)
+    RET (272)
+    JMP (273)
+    BEQ (274)
+    BNE (275)
+    BGT (276)
+    PUSH (277)
+    POP (278)
+    XCHG (279)
+    ADD (280)
+    SUB (281)
+    MUL (282)
+    DIV (283)
+    NOT (284)
+    AND (285)
+    OR (286)
+    XOR (287)
+    SHL (288)
+    SHR (289)
+    LD (290)
+    ST (291)
+    CSRRD (292)
+    CSRWR (293)
+    SYMBOL <string> (294) 8 13 14 15 16 18
+    STRING <string> (295) 12
+    NUM <number> (296) 17 19
+    COMMA <string> (297)
+    REG <string> (298)
+    SREG <string> (299)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (47)
+        on left: 0
+    program (48)
+        on left: 1
+        on right: 0
+    lines (49)
+        on left: 2 3 4
+        on right: 1 2 3
+    line (50)
+        on left: 5 6 7
+        on right: 2 4
+    directive (51)
+        on left: 8 9 10 11 12
+        on right: 6 7
+    label (52)
+        on left: 13
+        on right: 5 6
+    SYMLIST <stringvec> (53)
+        on left: 14 15
+        on right: 9 11 15
+    EXPR_LIST <exprvec> (54)
+        on left: 16 17 18 19
+        on right: 10 18 19
+
+
+State 0
+
+    0 $accept: . program $end
+
+    GLOBAL   shift, and go to state 1
+    EXTERN   shift, and go to state 2
+    SECTION  shift, and go to state 3
+    WORD     shift, and go to state 4
+    ASCII    shift, and go to state 5
+    SYMBOL   shift, and go to state 6
+
+    program    go to state 7
+    lines      go to state 8
+    line       go to state 9
+    directive  go to state 10
+    label      go to state 11
+
+
+State 1
+
+    9 directive: GLOBAL . SYMLIST
+
+    SYMBOL  shift, and go to state 12
+
+    SYMLIST  go to state 13
+
+
+State 2
+
+   11 directive: EXTERN . SYMLIST
+
+    SYMBOL  shift, and go to state 12
+
+    SYMLIST  go to state 14
+
+
+State 3
+
+    8 directive: SECTION . SYMBOL
+
+    SYMBOL  shift, and go to state 15
+
+
+State 4
+
+   10 directive: WORD . EXPR_LIST
+
+    SYMBOL  shift, and go to state 16
+    NUM     shift, and go to state 17
+
+    EXPR_LIST  go to state 18
+
+
+State 5
+
+   12 directive: ASCII . STRING
+
+    STRING  shift, and go to state 19
+
+
+State 6
+
+   13 label: SYMBOL . ':'
+
+    ':'  shift, and go to state 20
+
+
+State 7
+
+    0 $accept: program . $end
+
+    $end  shift, and go to state 21
+
+
+State 8
+
+    1 program: lines .
+    2 lines: lines . ENDL line
+    3      | lines . ENDL
+
+    ENDL  shift, and go to state 22
+
+    $default  reduce using rule 1 (program)
+
+
+State 9
+
+    4 lines: line .
+
+    $default  reduce using rule 4 (lines)
+
+
+State 10
+
+    7 line: directive .
+
+    $default  reduce using rule 7 (line)
+
+
+State 11
+
+    5 line: label .
+    6     | label . directive
+
+    GLOBAL   shift, and go to state 1
+    EXTERN   shift, and go to state 2
+    SECTION  shift, and go to state 3
+    WORD     shift, and go to state 4
+    ASCII    shift, and go to state 5
+
+    $default  reduce using rule 5 (line)
+
+    directive  go to state 23
+
+
+State 12
+
+   14 SYMLIST: SYMBOL .
+
+    $default  reduce using rule 14 (SYMLIST)
+
+
+State 13
+
+    9 directive: GLOBAL SYMLIST .
+   15 SYMLIST: SYMLIST . ',' SYMBOL
+
+    ','  shift, and go to state 24
+
+    $default  reduce using rule 9 (directive)
+
+
+State 14
+
+   11 directive: EXTERN SYMLIST .
+   15 SYMLIST: SYMLIST . ',' SYMBOL
+
+    ','  shift, and go to state 24
+
+    $default  reduce using rule 11 (directive)
+
+
+State 15
+
+    8 directive: SECTION SYMBOL .
+
+    $default  reduce using rule 8 (directive)
+
+
+State 16
+
+   16 EXPR_LIST: SYMBOL .
+
+    $default  reduce using rule 16 (EXPR_LIST)
+
+
+State 17
+
+   17 EXPR_LIST: NUM .
+
+    $default  reduce using rule 17 (EXPR_LIST)
+
+
+State 18
+
+   10 directive: WORD EXPR_LIST .
+   18 EXPR_LIST: EXPR_LIST . ',' SYMBOL
+   19          | EXPR_LIST . ',' NUM
+
+    ','  shift, and go to state 25
+
+    $default  reduce using rule 10 (directive)
+
+
+State 19
+
+   12 directive: ASCII STRING .
+
+    $default  reduce using rule 12 (directive)
+
+
+State 20
+
+   13 label: SYMBOL ':' .
+
+    $default  reduce using rule 13 (label)
+
+
+State 21
+
+    0 $accept: program $end .
+
+    $default  accept
+
+
+State 22
+
+    2 lines: lines ENDL . line
+    3      | lines ENDL .
+
+    GLOBAL   shift, and go to state 1
+    EXTERN   shift, and go to state 2
+    SECTION  shift, and go to state 3
+    WORD     shift, and go to state 4
+    ASCII    shift, and go to state 5
+    SYMBOL   shift, and go to state 6
+
+    $default  reduce using rule 3 (lines)
+
+    line       go to state 26
+    directive  go to state 10
+    label      go to state 11
+
+
+State 23
+
+    6 line: label directive .
+
+    $default  reduce using rule 6 (line)
+
+
+State 24
+
+   15 SYMLIST: SYMLIST ',' . SYMBOL
+
+    SYMBOL  shift, and go to state 27
+
+
+State 25
+
+   18 EXPR_LIST: EXPR_LIST ',' . SYMBOL
+   19          | EXPR_LIST ',' . NUM
+
+    SYMBOL  shift, and go to state 28
+    NUM     shift, and go to state 29
+
+
+State 26
+
+    2 lines: lines ENDL line .
+
+    $default  reduce using rule 2 (lines)
+
+
+State 27
+
+   15 SYMLIST: SYMLIST ',' SYMBOL .
+
+    $default  reduce using rule 15 (SYMLIST)
+
+
+State 28
+
+   18 EXPR_LIST: EXPR_LIST ',' SYMBOL .
+
+    $default  reduce using rule 18 (EXPR_LIST)
+
+
+State 29
+
+   19 EXPR_LIST: EXPR_LIST ',' NUM .
+
+    $default  reduce using rule 19 (EXPR_LIST)

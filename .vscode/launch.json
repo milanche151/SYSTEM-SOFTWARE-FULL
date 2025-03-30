@@ -5,10 +5,16 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "(gdb) Attach",
+      "name": "(gdb) Launch",
       "type": "cppdbg",
-      "request": "attach",
-      "program": "enter program name, for example ${workspaceFolder}/a.out",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/assembler",
+      "args": ["tests/directives.s"],
+      "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+
       "MIMode": "gdb",
       "setupCommands": [
           {
@@ -21,7 +27,8 @@
               "text": "-gdb-set disassembly-flavor intel",
               "ignoreFailures": true
           }
-      ]
+
+      ],
     }
 
   ]

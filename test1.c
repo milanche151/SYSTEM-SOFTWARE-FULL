@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "inc/vector.h"
+#include "vector.h"
 
 VECTOR_DECLARE(VecInt, int);
 
