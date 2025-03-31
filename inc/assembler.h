@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "vector.h"
+#include "instr.h"
 
 VECTOR_DECLARE(VecString, char*);
 
@@ -99,6 +100,7 @@ typedef struct Line{
     char *string;
 
   } directive;
+  Instruction instruction;
 }Line;
 
 VECTOR_DECLARE(VecLine, Line);
@@ -145,5 +147,9 @@ void global(struct Assembler* assembler, VecString symlist);
 void word(struct Assembler* assembler, VecExpr expresions);
 void ascii(struct Assembler* assembler, char* string);
 void externSym(struct Assembler* assembler, VecString symlist);
+
+//_________________________________________instructions____________________________________________________
+void instructionNoop(struct Assembler *assembler, InstrType instr_type);
+void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD);
 
 #endif

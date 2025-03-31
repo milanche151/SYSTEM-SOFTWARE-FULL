@@ -44,7 +44,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 14 "misc/parser.y"
+#line 16 "misc/parser.y"
 
   #include "assembler.h"
   #include "vector.h"
@@ -95,9 +95,8 @@ extern int yydebug;
     SYMBOL = 294,
     STRING = 295,
     NUM = 296,
-    COMMA = 297,
-    REG = 298,
-    SREG = 299
+    REG = 297,
+    SREG = 298
   };
 #endif
 
@@ -105,12 +104,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 18 "misc/parser.y"
+#line 20 "misc/parser.y"
 
   int number;
   char *string;
   VecString stringvec;
   VecExpr exprvec;
+  InstrType instrType;
 
 #line 116 "inc/parser.tab.h"
 

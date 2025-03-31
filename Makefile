@@ -10,6 +10,7 @@ default:
 		-g src/parser.tab.c \
 		-g src/lex.yy.c \
 		-g src/assembler.c \
+		-g src/instr.c \
 		-g src/main.c \
 		-g src/util.c \
 		-lfl

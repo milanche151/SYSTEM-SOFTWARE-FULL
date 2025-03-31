@@ -323,6 +323,58 @@ void ascii(struct Assembler* assembler, char* string){
     VecLinePush(&current_section->lines,line);
 }
 
+void instructionNoop(struct Assembler *assembler, InstrType instr_type){
+  const InstrDesc* desc = instr_descs+instr_type;
+  assert(desc->family==INSTR_FAMILY_NOOP);
+  if(assembler->sections.size > 0){
+    Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
+
+    VecBytePush(&current_section->machineCode, (desc->opcode << 4) | (desc->modifier));
+    VecBytePush(&current_section->machineCode, 0x00);
+    VecBytePush(&current_section->machineCode, 0x00);
+    VecBytePush(&current_section->machineCode, 0x00);
+
+    Line line ={
+      .type = LINE_TYPE_INSTRUCITON,
+      .instruction = {
+        .type=instr_type
+      }
+    };
+    VecLinePush(&current_section->lines,line);
+  }
+  else{
+    assembler->correct = false;
+  }
+  
+}
+
+void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD){
+  const InstrDesc* desc = instr_descs+instr_type;
+  assert(desc->family==INSTR_FAMILY_TWOREG);
+
+  if(assembler->sections.size > 0){
+    Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
+
+    VecBytePush(&current_section->machineCode, (desc->opcode << 4) | (desc->modifier));
+    VecBytePush(&current_section->machineCode, (regD<< 4) | regD);
+    VecBytePush(&current_section->machineCode, regS << 4);
+    VecBytePush(&current_section->machineCode, 0x00);
+
+    Line line ={
+      .type = LINE_TYPE_INSTRUCITON,
+      .instruction = {
+        .type=instr_type,
+        .reg1 = regS,
+        .reg2 = regD,
+      }
+    };
+    VecLinePush(&current_section->lines,line);
+  }
+  else{
+    assembler->correct = false;
+  }
+}
+
 struct Assembler
 assemblerCreate(void){
   struct Assembler assembler = (struct Assembler){
@@ -387,12 +439,22 @@ static void linePrint(const Line* line){
     case DIRECTIVE_TYPE_ASCII:
       break;
       
+    default: assert(0);
     }
     break;
-  case LINE_TYPE_INSTRUCITON:
-    /* TODO */
-    break;
-  default:
+  case LINE_TYPE_INSTRUCITON: {
+    const InstrDesc *desc = &instr_descs[line->instruction.type];
+    printf("%s ", desc->name);
+    switch(desc->family){
+    case INSTR_FAMILY_NOOP:
+      break;
+    case INSTR_FAMILY_TWOREG:
+      printf("%%r%d, %%r%d", line->instruction.reg1, line->instruction.reg2);
+      break;
+    default: assert(0);
+    }
+  } break;
+  default: assert(0);
     break;
   }
   printf("\n");

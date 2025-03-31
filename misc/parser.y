@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "instr.h"
+
 extern int yylex();
 extern FILE *yyin;
  
@@ -20,6 +22,7 @@ extern struct Assembler *assembler;
   char *string;
   VecString stringvec;
   VecExpr exprvec;
+  InstrType instrType;
 }
 
 %token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR
@@ -27,10 +30,11 @@ extern struct Assembler *assembler;
 %token<string> STRING
 %type<stringvec> SYMLIST
 %type<exprvec> EXPR_LIST
-%token<number> NUM 
-%token<string> COMMA
-%token<string> REG
-%token<string> SREG
+%token<number> NUM
+%token<number> REG
+%token<number> SREG
+%type<instrType> noop_opcode
+%type<instrType> tworeg_opcode
 
 %%
 program:
@@ -47,6 +51,8 @@ line:
   label
   | label directive 
   | directive
+  | label instruction 
+  | instruction
   ;
 
 directive:
@@ -75,6 +81,19 @@ directive:
     AssemblerEndOfFile(assembler);
     YYACCEPT;
   }
+  ;
+
+instruction:
+  noop_opcode { instructionNoop(assembler, $1); }
+  | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
+  ;
+
+noop_opcode:
+  HALT { $$ = INSTR_HALT; }
+  ;
+
+tworeg_opcode:
+  ADD { $$ = INSTR_ADD; }
   ;
 
 label:

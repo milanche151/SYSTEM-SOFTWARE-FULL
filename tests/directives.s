@@ -2,6 +2,7 @@
 .extern b
 
 .section text
+  add %r1, %r2
 
 c:
   .word 0x12345678
@@ -19,5 +20,7 @@ f:
 
 g:
   .ascii "abc"
+
+
+
 .end
-h:
