@@ -74,7 +74,10 @@ InstrDesc instr_descs[INSTR_TYPE_COUNT] = {
 
   },
   [INSTR_LD] = {
-
+    .family = INSTR_FAMILY_LD,
+    .opcode = 0x09,
+    .modifier = 0x00,
+    .name = "LD"
   },
   [INSTR_STR] = {
 

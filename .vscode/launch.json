@@ -9,7 +9,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/assembler",
-      "args": ["tests/directives.s"],
+      "args": ["tests/instructions.s"],
       "stopAtEntry": true,
       "cwd": "${workspaceFolder}",
       "environment": [],

@@ -63,11 +63,32 @@ typedef struct InstrDesc {
 
 extern InstrDesc instr_descs[INSTR_TYPE_COUNT];
 
+typedef enum OperandType{
+  OPERAND_TYPE_IMMED_LIT,
+  OPERAND_TYPE_IMMED_SYM,
+  OPERAND_TYPE_MEMDIR_LIT,
+  OPERAND_TYPE_MEMDIR_SYM,
+  OPERAND_TYPE_REGDIR,
+  OPERAND_TYPE_REGIND,
+  OPERAND_TYPE_REGIND_LIT,
+  OPERAND_TYPE_REGIND_SYM,
+
+  OPERAND_TYPE_COUNT,
+}OperandType;
+
+typedef struct Operand{
+  OperandType type;
+  int reg;
+  int literal;
+  const char* symbol;
+}Operand;
+
 typedef struct Instruction
 {
   InstrType type;
   int reg1;
   int reg2;
+  Operand operand;
 } Instruction;
 
 #endif

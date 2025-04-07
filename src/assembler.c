@@ -6,6 +6,7 @@ VECTOR_IMPLEMENT(VecSymTbl,SymTableRow);
 VECTOR_IMPLEMENT(VecString, char*);
 VECTOR_IMPLEMENT(VecForwardRef, ForwardRef);
 VECTOR_IMPLEMENT(VecRelocation, Relocation);
+VECTOR_IMPLEMENT(VecLitPoolEntry, LitPoolEntry);
 VECTOR_IMPLEMENT(VecSection, Section);
 VECTOR_IMPLEMENT(VecExpr,Expression);
 VECTOR_IMPLEMENT(VecLine,Line);
@@ -223,6 +224,7 @@ void section(struct Assembler* assembler, char* symbol){
     .lines = VecLineCreate(),
     .forwardRefs = VecForwardRefCreate(),
     .relocations = VecRelocationCreate(),
+    .litPool = VecLitPoolEntryCreate(),
   };
   VecSectionPush(&assembler->sections, new_section);
 }
@@ -375,6 +377,138 @@ void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int re
   }
 }
 
+static bool canFitIn12bit(int dist){
+  return dist >= -0x0800 && dist < 0x0800;
+}
+
+// this register's value is always 0 (reg0's value is always 0)
+#define REGISTER_ZERO 0
+
+void instructionLoad(struct Assembler *assembler, Operand operand, int regD){
+  const InstrDesc *desc = instr_descs+INSTR_LD;
+  assert(desc->family == INSTR_FAMILY_LD);
+
+  if(assembler->sections.size > 0){
+    Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
+    
+    // generate LitPoolEntry
+    switch(operand.type){
+
+    case OPERAND_TYPE_IMMED_LIT:
+      VecForwardRefPush(&current_section->forwardRefs,(ForwardRef){
+        .offset = current_section->machineCode.size,
+        .lit_idx = current_section->litPool.size,
+        .type = FORWARD_REF_LITPOOL_NUM,
+      });
+      VecLitPoolEntryPush(&current_section->litPool, (LitPoolEntry){.value = operand.literal} );
+      break;
+
+    case OPERAND_TYPE_IMMED_SYM:
+      VecForwardRefPush(&current_section->forwardRefs,(ForwardRef){
+        .offset = current_section->machineCode.size,
+        .lit_idx = current_section->litPool.size,
+        .type = FORWARD_REF_LITPOOL_SYM,
+        .name = operand.symbol
+      });
+      VecLitPoolEntryPush(&current_section->litPool, (LitPoolEntry){.value = 0x00 } );
+      break;
+
+    case OPERAND_TYPE_MEMDIR_LIT:
+      VecForwardRefPush(&current_section->forwardRefs,(ForwardRef){
+        .offset = current_section->machineCode.size,
+        .lit_idx = current_section->litPool.size,
+        .type = FORWARD_REF_LITPOOL_NUM,
+      });
+      VecLitPoolEntryPush(&current_section->litPool, (LitPoolEntry){.value = operand.literal} );
+      break;
+
+    case OPERAND_TYPE_MEMDIR_SYM:
+      VecForwardRefPush(&current_section->forwardRefs,(ForwardRef){
+        .offset = current_section->machineCode.size,
+        .lit_idx = current_section->litPool.size,
+        .type = FORWARD_REF_LITPOOL_SYM,
+        .name = operand.symbol
+      });
+      VecLitPoolEntryPush(&current_section->litPool, (LitPoolEntry){.value = 0x00 } );
+      break;
+
+    case OPERAND_TYPE_REGDIR:
+    case OPERAND_TYPE_REGIND:
+    case OPERAND_TYPE_REGIND_LIT:
+    case OPERAND_TYPE_REGIND_SYM:
+      break;
+    default: assert(0);
+    }
+
+    switch(operand.type){
+    case OPERAND_TYPE_IMMED_LIT:
+      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
+      VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
+      VecBytePush(&current_section->machineCode, 0x00 << 4 | 0x00);
+      VecBytePush(&current_section->machineCode, 0x00);
+      break;
+    case OPERAND_TYPE_IMMED_SYM:
+      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
+      VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
+      VecBytePush(&current_section->machineCode, 0x00 << 4 | 0x00);
+      VecBytePush(&current_section->machineCode, 0x00);
+      break;
+    case OPERAND_TYPE_MEMDIR_LIT:  
+      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
+      VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
+      VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
+      VecBytePush(&current_section->machineCode, 0x00);
+      break;
+    case OPERAND_TYPE_MEMDIR_SYM: 
+      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
+      VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
+      VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
+      VecBytePush(&current_section->machineCode, 0x00);
+      break;
+    case OPERAND_TYPE_REGDIR:
+      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
+      VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
+      VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
+      VecBytePush(&current_section->machineCode, 0x00);
+      break;
+    case OPERAND_TYPE_REGIND:
+      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
+      VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
+      VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
+      VecBytePush(&current_section->machineCode, 0x00);
+      break;
+    case OPERAND_TYPE_REGIND_LIT:
+      if(canFitIn12bit(operand.literal)){ 
+        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
+        VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
+        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | (operand.literal>>8 & 0x0f));
+        VecBytePush(&current_section->machineCode, operand.literal & 0xff);
+      }
+      else {
+        assembler->correct = false;
+      }
+      break;
+    case OPERAND_TYPE_REGIND_SYM:
+      assembler->correct = false;
+      break;
+    }
+
+
+    Line line ={
+      .type = LINE_TYPE_INSTRUCITON,
+      .instruction = {
+        .type=INSTR_LD,
+        .operand = operand,
+        .reg2 = regD,
+      }
+    };
+    VecLinePush(&current_section->lines,line);
+  }
+  else {
+    assembler->correct = true;
+  }
+}
+
 struct Assembler
 assemblerCreate(void){
   struct Assembler assembler = (struct Assembler){
@@ -451,6 +585,9 @@ static void linePrint(const Line* line){
     case INSTR_FAMILY_TWOREG:
       printf("%%r%d, %%r%d", line->instruction.reg1, line->instruction.reg2);
       break;
+    case INSTR_FAMILY_LD:
+      printf("LOAD INSTR");
+      break;
     default: assert(0);
     }
   } break;
@@ -479,6 +616,16 @@ void assemblerPrint(const struct Assembler* assembler){
     for(size_t j = 0; j < section->machineCode.size; j++){
       printf("%02x", section->machineCode.data[j]);
       if(j % 8 == 7) printf("\n");
+      else printf(" ");
+    }
+    for(size_t j = 0; j < section->litPool.size; j++){
+      printf("%02x %02x %02x %02x",
+        (section->litPool.data[j].value >> 0) & 0xff,
+        (section->litPool.data[j].value >> 8) & 0xff,
+        (section->litPool.data[j].value >> 16) & 0xff,
+        (section->litPool.data[j].value >> 24) & 0xff
+      );
+      if(j % 2 == 1) printf("\n");
       else printf(" ");
     }
     printf("\n");
@@ -514,25 +661,66 @@ void AssemblerEndOfFile(struct Assembler *assembler){
     {
       const ForwardRef* currentFR = &currentSection->forwardRefs.data[j];
 
-      SymTableRow *symbol = SymTableFind(assembler, currentFR->name);
 
-      if(symbol){
+      switch (currentFR->type)
+      {
+      case FORWARD_REF_DATA32:{
 
-        switch (currentFR->type)
-        {
-        case FORWARD_REF_DATA32:{
+        SymTableRow *symbol = SymTableFind(assembler, currentFR->name);
+        
+        if(symbol){
           add_data32_reloc(assembler, currentSection, currentFR->offset, symbol);
         }
-        break;
-        default:
-          assert(0);
-          break;
+        else {
+          assembler->correct = false;
+        }
+      }
+      break;
+      case FORWARD_REF_LITPOOL_NUM:{
+        int dist = currentSection->machineCode.size - (currentFR->offset+4) + currentFR->lit_idx*4;
+        if(canFitIn12bit(dist)){
+          unsigned char *second = &currentSection->machineCode.data[currentFR->offset + 2];
+          unsigned char *third  = &currentSection->machineCode.data[currentFR->offset + 3];
+
+          *second &= 0xF0;
+          *third &= 0x00;
+          *second |= (dist>>8)&(0x0F);
+          *third |= (dist)&(0xFF);
+        }
+        else {
+          assembler->correct = false;
+        }
+      }
+      break;
+      case FORWARD_REF_LITPOOL_SYM:{
+        int dist = currentSection->machineCode.size - (currentFR->offset+4) + currentFR->lit_idx*4;
+        if(canFitIn12bit(dist)){
+          unsigned char *second = &currentSection->machineCode.data[currentFR->offset + 2];
+          unsigned char *third  = &currentSection->machineCode.data[currentFR->offset + 3];
+
+          *second &= 0xF0;
+          *third &= 0x00;
+          *second |= (dist>>8)&(0x0F);
+          *third |= (dist)&(0xFF);
+        }
+        else {
+          assembler->correct = false;
         }
 
+        SymTableRow *symbol = SymTableFind(assembler, currentFR->name);
+        if(symbol){
+          add_data32_reloc(assembler, currentSection, currentSection->machineCode.size + currentFR->lit_idx * 4, symbol);
+        }
+        else {
+          assembler->correct = false;
+        }
       }
-      else {
-        assembler->correct = false;
+      break;
+      default:
+        assert(0);
+        break;
       }
+
     }
     
   }

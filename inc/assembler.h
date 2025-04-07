@@ -23,7 +23,8 @@ typedef enum{
 
 typedef enum{
   FORWARD_REF_DATA32,
-  //FORWARD_REF_PC12,
+  FORWARD_REF_LITPOOL_NUM, // this refers to literal with index lit_idx
+  FORWARD_REF_LITPOOL_SYM, // this refers to literal with index lit_idx
 
   FORWARD_REF_TYPE_COUNT,
 
@@ -34,6 +35,7 @@ typedef struct ForwardRef{
   ForwardRefType type;
   const char *name;
   int addend;
+  size_t lit_idx;
 } ForwardRef;
 
 VECTOR_DECLARE(VecForwardRef, ForwardRef);
@@ -107,11 +109,19 @@ VECTOR_DECLARE(VecLine, Line);
 
 VECTOR_DECLARE(VecByte, unsigned char);
 
+typedef struct LitPoolEntry {
+  int value;
+} LitPoolEntry;
+
+VECTOR_DECLARE(VecLitPoolEntry, LitPoolEntry);
+
 typedef struct Section
 {
   size_t symtabIndex;
   VecByte machineCode;
   VecLine lines;
+
+  VecLitPoolEntry litPool;
 
   VecForwardRef forwardRefs;
   VecRelocation relocations;
@@ -151,5 +161,6 @@ void externSym(struct Assembler* assembler, VecString symlist);
 //_________________________________________instructions____________________________________________________
 void instructionNoop(struct Assembler *assembler, InstrType instr_type);
 void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD);
+void instructionLoad(struct Assembler *assembler,Operand operand, int regD);
 
 #endif

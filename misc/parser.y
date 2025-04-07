@@ -23,6 +23,7 @@ extern struct Assembler *assembler;
   VecString stringvec;
   VecExpr exprvec;
   InstrType instrType;
+  Operand operand;
 }
 
 %token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR
@@ -35,6 +36,7 @@ extern struct Assembler *assembler;
 %token<number> SREG
 %type<instrType> noop_opcode
 %type<instrType> tworeg_opcode
+%type<operand> operand
 
 %%
 program:
@@ -86,6 +88,18 @@ directive:
 instruction:
   noop_opcode { instructionNoop(assembler, $1); }
   | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
+  | LD operand ',' REG { instructionLoad(assembler,$2,$4); }
+  ;
+
+operand:
+  '$' NUM { $$ = (Operand){.type = OPERAND_TYPE_IMMED_LIT,.literal = $2}; }
+  | '$' SYMBOL { $$ = (Operand){.type = OPERAND_TYPE_IMMED_SYM,.symbol = $2}; }
+  | NUM { $$ = (Operand){.type = OPERAND_TYPE_MEMDIR_LIT,.literal = $1}; }
+  | SYMBOL { $$ = (Operand){.type = OPERAND_TYPE_MEMDIR_SYM,.symbol = $1}; }
+  | REG { $$ = (Operand){.type = OPERAND_TYPE_REGDIR,.reg = $1}; }
+  | '[' REG ']' { $$ = (Operand){.type = OPERAND_TYPE_REGIND,.reg = $2}; }
+  | '[' REG '+' NUM ']' { $$ = (Operand){.type = OPERAND_TYPE_REGIND_LIT,.reg = $2,.literal = $4}; }
+  | '[' REG '+' SYMBOL ']' { $$ = (Operand){.type = OPERAND_TYPE_REGIND_SYM,.reg = $2,.symbol = $4}; }
   ;
 
 noop_opcode:

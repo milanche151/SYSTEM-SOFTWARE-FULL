@@ -111,8 +111,9 @@ union YYSTYPE
   VecString stringvec;
   VecExpr exprvec;
   InstrType instrType;
+  Operand operand;
 
-#line 116 "inc/parser.tab.h"
+#line 117 "inc/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
