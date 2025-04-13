@@ -32,10 +32,16 @@ InstrDesc instr_descs[INSTR_TYPE_COUNT] = {
 
   },
   [INSTR_PUSH] = {
-
+    .family = INSTR_FAMILY_ONEREG,
+    .opcode = 0x08,
+    .modifier = 0x01,
+    .name = "push",
   },
   [INSTR_POP] = {
-
+    .family = INSTR_FAMILY_ONEREG,
+    .opcode = 0x09,
+    .modifier = 0x03,
+    .name = "pop",
   },
   [INSTR_NOT] = {
 
@@ -77,13 +83,13 @@ InstrDesc instr_descs[INSTR_TYPE_COUNT] = {
     .family = INSTR_FAMILY_LD,
     .opcode = 0x09,
     .modifier = 0x00,
-    .name = "LD"
+    .name = "ld"
   },
   [INSTR_STR] = {
     .family = INSTR_FAMILY_STR,
     .opcode = 0x08,
     .modifier = 0x00,
-    .name = "STR"
+    .name = "st"
   },
   [INSTR_CSRRD] = {
 

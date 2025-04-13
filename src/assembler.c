@@ -325,6 +325,11 @@ void ascii(struct Assembler* assembler, char* string){
     VecLinePush(&current_section->lines,line);
 }
 
+// this register's value is always 0 (reg0's value is always 0)
+#define REGISTER_ZERO 0x0
+#define REGISTER_SP 0xE
+#define REGISTER_PC 0xF
+
 void instructionNoop(struct Assembler *assembler, InstrType instr_type){
   const InstrDesc* desc = instr_descs+instr_type;
   assert(desc->family==INSTR_FAMILY_NOOP);
@@ -348,6 +353,43 @@ void instructionNoop(struct Assembler *assembler, InstrType instr_type){
     assembler->correct = false;
   }
   
+}
+
+#define STACK_DISP 0x4
+
+void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int reg){
+  const InstrDesc* desc = instr_descs+instr_type;
+  assert(desc->family==INSTR_FAMILY_ONEREG);
+
+  if(assembler->sections.size > 0){
+    Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
+
+    if(instr_type == INSTR_PUSH){
+      VecBytePush(&current_section->machineCode, (desc->opcode << 4) | (desc->modifier));
+      VecBytePush(&current_section->machineCode, (REGISTER_SP << 4) | 0x00);
+      VecBytePush(&current_section->machineCode, reg << 4 | (-STACK_DISP >> 8 & 0x0f));
+      VecBytePush(&current_section->machineCode, ((-STACK_DISP >> 0) & 0xff));
+    }
+    else if(instr_type == INSTR_POP){
+      VecBytePush(&current_section->machineCode, (desc->opcode << 4) | (desc->modifier));
+      VecBytePush(&current_section->machineCode, (reg << 4) | REGISTER_SP);
+      VecBytePush(&current_section->machineCode, 0x00 << 4 | (STACK_DISP >> 8 & 0x0f));
+      VecBytePush(&current_section->machineCode, ((STACK_DISP >> 0) & 0xff));
+    }
+    else assert(0);
+
+    Line line = {
+      .type = LINE_TYPE_INSTRUCITON,
+      .instruction = {
+        .type=instr_type,
+        .reg1 = reg,
+      }
+    };
+    VecLinePush(&current_section->lines,line);
+  }
+  else{
+    assembler->correct = false;
+  }
 }
 
 void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD){
@@ -380,9 +422,6 @@ void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int re
 static bool canFitIn12bit(int dist){
   return dist >= -0x0800 && dist < 0x0800;
 }
-
-// this register's value is always 0 (reg0's value is always 0)
-#define REGISTER_ZERO 0
 
 void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Operand operand, int regD){
   const InstrDesc *desc = instr_descs+INSTR_LD;
@@ -631,6 +670,9 @@ static void linePrint(const Line* line){
     printf("%s ", desc->name);
     switch(desc->family){
     case INSTR_FAMILY_NOOP:
+      break;
+    case INSTR_FAMILY_ONEREG:
+      printf("%%r%d", line->instruction.reg1);
       break;
     case INSTR_FAMILY_TWOREG:
       printf("%%r%d, %%r%d", line->instruction.reg1, line->instruction.reg2);
