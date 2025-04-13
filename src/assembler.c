@@ -424,8 +424,8 @@ static bool canFitIn12bit(int dist){
 }
 
 void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Operand operand, int regD){
-  const InstrDesc *desc = instr_descs+INSTR_LD;
-  assert(desc->family == INSTR_FAMILY_LD);
+  const InstrDesc *desc = instr_descs+instrType;
+  assert(desc->family == INSTR_FAMILY_LD || desc->family == INSTR_FAMILY_STR);
 
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
@@ -580,21 +580,78 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
     else{
       assert(0);
     }
-    
-
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
         .type = instrType,
         .operand = operand,
-        .reg2 = regD,
+        .reg1 = regD,
       }
     };
     VecLinePush(&current_section->lines,line);
   }
   else {
-    assembler->correct = true;
+    assembler->correct = false;
+  }
+}
+
+void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand){
+  const InstrDesc *desc = instr_descs+instrType;
+  assert(desc->family == INSTR_FAMILY_TWOREG_ONEOP);
+
+  if(assembler->sections.size > 0){
+    Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
+
+    if(instrType == INSTR_CALL){
+      VecBytePush(&current_section->machineCode, (instr_descs[INSTR_PUSH].opcode << 4) | (instr_descs[INSTR_PUSH].modifier));
+      VecBytePush(&current_section->machineCode, (REGISTER_SP << 4) | 0x00);
+      VecBytePush(&current_section->machineCode, REGISTER_PC << 4 | (-STACK_DISP >> 8 & 0x0f));
+      VecBytePush(&current_section->machineCode, ((-STACK_DISP >> 0) & 0xff));
+    }
+
+    //litpool 
+    switch(operand.type){
+    case OPERAND_TYPE_IMMED_LIT:
+      VecForwardRefPush(&current_section->forwardRefs,(ForwardRef){
+        .offset = current_section->machineCode.size,
+        .lit_idx = current_section->litPool.size,
+        .type = FORWARD_REF_LITPOOL_NUM,
+      });
+      VecLitPoolEntryPush(&current_section->litPool, (LitPoolEntry){.value = operand.literal} );
+      break;
+
+    case OPERAND_TYPE_IMMED_SYM:
+      VecForwardRefPush(&current_section->forwardRefs,(ForwardRef){
+        .offset = current_section->machineCode.size,
+        .lit_idx = current_section->litPool.size,
+        .type = FORWARD_REF_LITPOOL_SYM,
+        .name = operand.symbol
+      });
+      VecLitPoolEntryPush(&current_section->litPool, (LitPoolEntry){.value = 0x00 } );
+      break;
+    default:
+      assert(0);
+    }
+
+    //insert code
+    VecBytePush(&current_section->machineCode, desc->opcode<<4 | desc->modifier);
+    VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | reg1);
+    VecBytePush(&current_section->machineCode, reg2 << 4 | 0x00);
+    VecBytePush(&current_section->machineCode, 0x00);
+
+    Line line ={
+      .type = LINE_TYPE_INSTRUCITON,
+      .instruction = {
+        .type = instrType,
+        .operand = operand,
+        .reg1 = reg1,
+        .reg2 = reg2,
+      }
+    };
+    VecLinePush(&current_section->lines,line);
+  }else{
+    assembler->correct = false;
   }
 }
 
@@ -640,6 +697,36 @@ static void exprPrint(const Expression* expr){
   }
 }
 
+static void operandPrint(const Operand *operand){
+  switch(operand->type){
+  case OPERAND_TYPE_IMMED_LIT:
+    printf("<immed>%d", operand->literal);
+    break;
+  case OPERAND_TYPE_IMMED_SYM:
+    printf("<immed>%s", operand->symbol);
+    break;
+  case OPERAND_TYPE_MEMDIR_LIT:
+    printf("<memdir>%d", operand->literal);
+    break;
+  case OPERAND_TYPE_MEMDIR_SYM:
+    printf("<memdir>%s", operand->symbol);
+    break;
+  case OPERAND_TYPE_REGDIR:
+    printf("<regdir>%d", operand->reg);
+    break;
+  case OPERAND_TYPE_REGIND:
+    printf("<regind>[%d]", operand->reg);
+    break;
+  case OPERAND_TYPE_REGIND_LIT:
+    printf("<regind>[%d+%d]", operand->reg, operand->literal);
+    break;
+  case OPERAND_TYPE_REGIND_SYM:
+    printf("<regind>[%d+%s]", operand->reg, operand->symbol);
+    break;
+  default: assert(0);
+  }
+}
+
 static void linePrint(const Line* line){
   static const char *directiveNames[] = {
     [DIRECTIVE_TYPE_WORD]  = ".word",
@@ -677,11 +764,17 @@ static void linePrint(const Line* line){
     case INSTR_FAMILY_TWOREG:
       printf("%%r%d, %%r%d", line->instruction.reg1, line->instruction.reg2);
       break;
+    case INSTR_FAMILY_TWOREG_ONEOP:
+      printf("%%r%d, %%r%d, ", line->instruction.reg1, line->instruction.reg2);
+      operandPrint(&line->instruction.operand);
+      break;
     case INSTR_FAMILY_LD:
-      printf("LOAD INSTR");
+      operandPrint(&line->instruction.operand);
+      printf(", %%r%d", line->instruction.reg1);
       break;
     case INSTR_FAMILY_STR:
-      printf("STORE INSTR");
+      printf("%%r%d, ", line->instruction.reg1);
+      operandPrint(&line->instruction.operand);
       break;
     default: assert(0);
     }

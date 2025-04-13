@@ -163,5 +163,6 @@ void instructionNoop(struct Assembler *assembler, InstrType instr_type);
 void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int reg);
 void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD);
 void instructionLoadStore(struct Assembler *assembler, InstrType instrType, Operand operand, int regD);
+void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand);
 
 #endif

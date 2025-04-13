@@ -168,11 +168,13 @@ enum yysymbol_kind_t
   YYSYMBOL_directive = 54,                 /* directive  */
   YYSYMBOL_instruction = 55,               /* instruction  */
   YYSYMBOL_operand = 56,                   /* operand  */
-  YYSYMBOL_noop_opcode = 57,               /* noop_opcode  */
-  YYSYMBOL_tworeg_opcode = 58,             /* tworeg_opcode  */
-  YYSYMBOL_label = 59,                     /* label  */
-  YYSYMBOL_SYMLIST = 60,                   /* SYMLIST  */
-  YYSYMBOL_EXPR_LIST = 61                  /* EXPR_LIST  */
+  YYSYMBOL_jmp_operand = 57,               /* jmp_operand  */
+  YYSYMBOL_noop_opcode = 58,               /* noop_opcode  */
+  YYSYMBOL_tworeg_opcode = 59,             /* tworeg_opcode  */
+  YYSYMBOL_jmp_opcode = 60,                /* jmp_opcode  */
+  YYSYMBOL_label = 61,                     /* label  */
+  YYSYMBOL_SYMLIST = 62,                   /* SYMLIST  */
+  YYSYMBOL_EXPR_LIST = 63                  /* EXPR_LIST  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -498,18 +500,18 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  40
+#define YYFINAL  50
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   67
+#define YYLAST   86
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  50
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  12
+#define YYNNTS  14
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  39
+#define YYNRULES  47
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  66
+#define YYNSTATES  81
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   298
@@ -562,10 +564,11 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    43,    43,    47,    48,    49,    53,    54,    55,    56,
-      57,    61,    65,    69,    73,    77,    81,    89,    90,    91,
-      92,    93,    94,    98,    99,   100,   101,   102,   103,   104,
-     105,   109,   113,   117,   122,   123,   126,   127,   128,   129
+       0,    45,    45,    49,    50,    51,    55,    56,    57,    58,
+      59,    63,    67,    71,    75,    79,    83,    91,    92,    93,
+      94,    95,    96,    97,    98,    99,   103,   104,   105,   106,
+     107,   108,   109,   110,   114,   115,   119,   123,   127,   128,
+     129,   133,   138,   139,   142,   143,   144,   145
 };
 #endif
 
@@ -588,7 +591,8 @@ static const char *const yytname[] =
   "SHL", "SHR", "LD", "ST", "CSRRD", "CSRWR", "SYMBOL", "STRING", "NUM",
   "REG", "SREG", "','", "'$'", "'['", "']'", "'+'", "':'", "$accept",
   "program", "lines", "line", "directive", "instruction", "operand",
-  "noop_opcode", "tworeg_opcode", "label", "SYMLIST", "EXPR_LIST", YY_NULLPTR
+  "jmp_operand", "noop_opcode", "tworeg_opcode", "jmp_opcode", "label",
+  "SYMLIST", "EXPR_LIST", YY_NULLPTR
 };
 
 static const char *
@@ -598,7 +602,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-38)
+#define YYPACT_NINF (-37)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -612,13 +616,15 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -3,   -27,   -27,   -14,   -37,   -13,   -38,   -38,   -12,   -11,
-     -38,   -28,    -4,   -21,    29,    35,   -38,   -38,   -38,   -38,
-       0,    31,   -38,     1,     1,   -38,   -38,   -38,     2,   -38,
-     -38,   -38,   -38,   -38,   -38,   -33,     5,     4,     6,   -38,
-     -38,    -3,     7,   -38,   -38,    10,   -18,   -38,   -38,   -32,
-      13,   -28,   -38,    15,   -38,   -38,   -38,   -38,   -15,   -38,
-     -38,   -38,    11,    12,   -38,   -38
+      -2,   -27,   -27,    -8,   -36,   -10,   -37,   -37,   -32,   -32,
+     -37,   -37,   -37,    -7,    -6,   -37,   -17,     7,     3,    32,
+      45,   -37,   -37,   -37,   -37,    17,    19,    35,   -37,    18,
+      18,   -37,   -37,   -37,    20,   -37,   -37,   -37,   -37,   -37,
+     -37,   -37,   -37,   -37,   -37,   -26,    21,    22,    23,   -37,
+     -37,    -2,    25,    28,   -37,   -37,    26,     1,   -37,   -37,
+     -21,    31,   -17,   -37,    33,    34,   -37,   -37,   -37,   -37,
+       5,   -37,   -37,   -37,    30,    36,    37,   -32,   -37,   -37,
+     -37
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -626,27 +632,29 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,     0,     0,     0,     0,     0,    16,    31,     0,     0,
-      32,     0,     0,     0,     0,     2,     5,     8,    10,    17,
-       0,     6,    34,    12,    14,    11,    36,    37,    13,    15,
-      19,    20,    26,    25,    27,     0,     0,     0,     0,    33,
-       1,     4,     0,     7,     9,     0,     0,    24,    23,     0,
-       0,     0,     3,     0,    35,    38,    39,    28,     0,    21,
-      22,    18,     0,     0,    30,    29
+       0,     0,     0,     0,     0,     0,    16,    36,     0,     0,
+      38,    39,    40,     0,     0,    37,     0,     0,     0,     0,
+       2,     5,     8,    10,    17,     0,     0,     6,    42,    12,
+      14,    11,    44,    45,    13,    15,    35,    34,    23,    24,
+      18,    19,    29,    28,    30,     0,     0,     0,     0,    41,
+       1,     4,     0,     0,     7,     9,     0,     0,    27,    26,
+       0,     0,     0,     3,     0,     0,    43,    46,    47,    31,
+       0,    21,    22,    20,     0,     0,     0,     0,    33,    32,
+      25
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -38,   -38,   -38,    19,    40,    41,    14,   -38,   -38,   -38,
-      50,   -38
+     -37,   -37,   -37,    27,    50,    52,    24,    -9,   -37,   -37,
+     -37,   -37,    78,   -37
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,    14,    15,    16,    17,    18,    37,    19,    20,    21,
-      23,    28
+       0,    19,    20,    21,    22,    23,    47,    38,    24,    25,
+      26,    27,    29,    34
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -654,37 +662,43 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       1,     2,    26,     3,    27,     4,    47,     5,    48,     6,
-       7,    32,    22,    33,    34,    57,    58,    35,    36,     8,
-       9,    55,    10,    56,    62,    25,    63,    29,    39,    40,
-      30,    31,    11,    12,     1,     2,    13,     3,    38,     4,
-      41,     5,    42,     6,     7,    45,    46,    49,    50,    54,
-      51,    53,    24,     8,     9,    59,    10,    61,    64,    65,
-      52,    43,    44,     0,     0,    60,    11,    12
+      39,     1,     2,    32,     3,    33,     4,    36,     5,    37,
+       6,     7,    28,    58,     8,    59,     9,    10,    11,    12,
+      13,    14,    42,    15,    43,    44,    69,    70,    45,    46,
+      35,    31,    50,    16,    17,    40,    41,    18,     1,     2,
+      67,     3,    68,     4,    75,     5,    76,     6,     7,    48,
+      51,     8,    49,     9,    10,    11,    12,    13,    14,    52,
+      15,    53,    56,    60,    57,    66,    61,    62,    80,    64,
+      16,    17,    65,    71,    77,    73,    74,    54,    63,    55,
+      30,     0,     0,    78,    79,     0,    72
 };
 
 static const yytype_int8 yycheck[] =
 {
-       3,     4,    39,     6,    41,     8,    39,    10,    41,    12,
-      13,    39,    39,    41,    42,    47,    48,    45,    46,    22,
-      23,    39,    25,    41,    39,    39,    41,    40,    49,     0,
-      42,    42,    35,    36,     3,     4,    39,     6,    42,     8,
-       5,    10,    42,    12,    13,    44,    44,    42,    44,    39,
-      44,    44,     2,    22,    23,    42,    25,    42,    47,    47,
-      41,    21,    21,    -1,    -1,    51,    35,    36
+       9,     3,     4,    39,     6,    41,     8,    39,    10,    41,
+      12,    13,    39,    39,    16,    41,    18,    19,    20,    21,
+      22,    23,    39,    25,    41,    42,    47,    48,    45,    46,
+      40,    39,     0,    35,    36,    42,    42,    39,     3,     4,
+      39,     6,    41,     8,    39,    10,    41,    12,    13,    42,
+       5,    16,    49,    18,    19,    20,    21,    22,    23,    42,
+      25,    42,    44,    42,    44,    39,    44,    44,    77,    44,
+      35,    36,    44,    42,    44,    42,    42,    27,    51,    27,
+       2,    -1,    -1,    47,    47,    -1,    62
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     3,     4,     6,     8,    10,    12,    13,    22,    23,
-      25,    35,    36,    39,    51,    52,    53,    54,    55,    57,
-      58,    59,    39,    60,    60,    39,    39,    41,    61,    40,
+       0,     3,     4,     6,     8,    10,    12,    13,    16,    18,
+      19,    20,    21,    22,    23,    25,    35,    36,    39,    51,
+      52,    53,    54,    55,    58,    59,    60,    61,    39,    62,
+      62,    39,    39,    41,    63,    40,    39,    41,    57,    57,
       42,    42,    39,    41,    42,    45,    46,    56,    42,    49,
-       0,     5,    42,    54,    55,    44,    44,    39,    41,    42,
-      44,    44,    53,    44,    39,    39,    41,    47,    48,    42,
-      56,    42,    39,    41,    47,    47
+       0,     5,    42,    42,    54,    55,    44,    44,    39,    41,
+      42,    44,    44,    53,    44,    44,    39,    39,    41,    47,
+      48,    42,    56,    42,    42,    39,    41,    44,    47,    47,
+      57
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
@@ -692,17 +706,19 @@ static const yytype_int8 yyr1[] =
 {
        0,    50,    51,    52,    52,    52,    53,    53,    53,    53,
       53,    54,    54,    54,    54,    54,    54,    55,    55,    55,
-      55,    55,    55,    56,    56,    56,    56,    56,    56,    56,
-      56,    57,    58,    59,    60,    60,    61,    61,    61,    61
+      55,    55,    55,    55,    55,    55,    56,    56,    56,    56,
+      56,    56,    56,    56,    57,    57,    58,    59,    60,    60,
+      60,    61,    62,    62,    63,    63,    63,    63
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
        0,     2,     1,     3,     2,     1,     1,     2,     1,     2,
-       1,     2,     2,     2,     2,     2,     1,     1,     4,     2,
-       2,     4,     4,     2,     2,     1,     1,     1,     3,     5,
-       5,     1,     1,     2,     1,     3,     1,     1,     3,     3
+       1,     2,     2,     2,     2,     2,     1,     1,     2,     2,
+       4,     4,     4,     2,     2,     6,     2,     2,     1,     1,
+       1,     3,     5,     5,     1,     1,     1,     1,     1,     1,
+       1,     2,     1,     3,     1,     1,     3,     3
 };
 
 
@@ -1166,203 +1182,251 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* program: lines  */
-#line 43 "misc/parser.y"
+#line 45 "misc/parser.y"
         { AssemblerEndOfFile(assembler); }
-#line 1172 "src/parser.tab.c"
-    break;
-
-  case 11: /* directive: SECTION SYMBOL  */
-#line 61 "misc/parser.y"
-                 {
-    section(assembler, (yyvsp[0].string));
-  }
-#line 1180 "src/parser.tab.c"
-    break;
-
-  case 12: /* directive: GLOBAL SYMLIST  */
-#line 65 "misc/parser.y"
-                 {
-    global(assembler,(yyvsp[0].stringvec));
-  }
 #line 1188 "src/parser.tab.c"
     break;
 
-  case 13: /* directive: WORD EXPR_LIST  */
-#line 69 "misc/parser.y"
+  case 11: /* directive: SECTION SYMBOL  */
+#line 63 "misc/parser.y"
                  {
-    word(assembler,(yyvsp[0].exprvec));
+    section(assembler, (yyvsp[0].string));
   }
 #line 1196 "src/parser.tab.c"
     break;
 
-  case 14: /* directive: EXTERN SYMLIST  */
-#line 73 "misc/parser.y"
+  case 12: /* directive: GLOBAL SYMLIST  */
+#line 67 "misc/parser.y"
                  {
-    externSym(assembler,(yyvsp[0].stringvec));
+    global(assembler,(yyvsp[0].stringvec));
   }
 #line 1204 "src/parser.tab.c"
     break;
 
-  case 15: /* directive: ASCII STRING  */
-#line 77 "misc/parser.y"
-               {
-    ascii(assembler,(yyvsp[0].string));
+  case 13: /* directive: WORD EXPR_LIST  */
+#line 71 "misc/parser.y"
+                 {
+    word(assembler,(yyvsp[0].exprvec));
   }
 #line 1212 "src/parser.tab.c"
     break;
 
+  case 14: /* directive: EXTERN SYMLIST  */
+#line 75 "misc/parser.y"
+                 {
+    externSym(assembler,(yyvsp[0].stringvec));
+  }
+#line 1220 "src/parser.tab.c"
+    break;
+
+  case 15: /* directive: ASCII STRING  */
+#line 79 "misc/parser.y"
+               {
+    ascii(assembler,(yyvsp[0].string));
+  }
+#line 1228 "src/parser.tab.c"
+    break;
+
   case 16: /* directive: END  */
-#line 81 "misc/parser.y"
+#line 83 "misc/parser.y"
       {
    
     AssemblerEndOfFile(assembler);
     YYACCEPT;
   }
-#line 1222 "src/parser.tab.c"
+#line 1238 "src/parser.tab.c"
     break;
 
   case 17: /* instruction: noop_opcode  */
-#line 89 "misc/parser.y"
-              { instructionNoop(assembler, (yyvsp[0].instrType)); }
-#line 1228 "src/parser.tab.c"
-    break;
-
-  case 18: /* instruction: tworeg_opcode REG ',' REG  */
-#line 90 "misc/parser.y"
-                              { instructionTworeg(assembler, (yyvsp[-3].instrType), (yyvsp[-2].number), (yyvsp[0].number)); }
-#line 1234 "src/parser.tab.c"
-    break;
-
-  case 19: /* instruction: PUSH REG  */
 #line 91 "misc/parser.y"
-             { instructionOnereg(assembler, INSTR_PUSH, (yyvsp[0].number)); }
-#line 1240 "src/parser.tab.c"
+              { instructionNoop(assembler, (yyvsp[0].instrType)); }
+#line 1244 "src/parser.tab.c"
     break;
 
-  case 20: /* instruction: POP REG  */
+  case 18: /* instruction: PUSH REG  */
 #line 92 "misc/parser.y"
+             { instructionOnereg(assembler, INSTR_PUSH, (yyvsp[0].number)); }
+#line 1250 "src/parser.tab.c"
+    break;
+
+  case 19: /* instruction: POP REG  */
+#line 93 "misc/parser.y"
             { instructionOnereg(assembler, INSTR_POP, (yyvsp[0].number)); }
-#line 1246 "src/parser.tab.c"
+#line 1256 "src/parser.tab.c"
+    break;
+
+  case 20: /* instruction: tworeg_opcode REG ',' REG  */
+#line 94 "misc/parser.y"
+                              { instructionTworeg(assembler, (yyvsp[-3].instrType), (yyvsp[-2].number), (yyvsp[0].number)); }
+#line 1262 "src/parser.tab.c"
     break;
 
   case 21: /* instruction: LD operand ',' REG  */
-#line 93 "misc/parser.y"
+#line 95 "misc/parser.y"
                        { instructionLoadStore(assembler, INSTR_LD, (yyvsp[-2].operand),(yyvsp[0].number)); }
-#line 1252 "src/parser.tab.c"
+#line 1268 "src/parser.tab.c"
     break;
 
   case 22: /* instruction: ST REG ',' operand  */
-#line 94 "misc/parser.y"
+#line 96 "misc/parser.y"
                        { instructionLoadStore(assembler, INSTR_STR, (yyvsp[0].operand), (yyvsp[-2].number)); }
-#line 1258 "src/parser.tab.c"
+#line 1274 "src/parser.tab.c"
     break;
 
-  case 23: /* operand: '$' NUM  */
+  case 23: /* instruction: CALL jmp_operand  */
+#line 97 "misc/parser.y"
+                     { instructionJump(assembler, INSTR_CALL, 0, 0, (yyvsp[0].operand)); }
+#line 1280 "src/parser.tab.c"
+    break;
+
+  case 24: /* instruction: JMP jmp_operand  */
 #line 98 "misc/parser.y"
-          { (yyval.operand) = (Operand){.type = OPERAND_TYPE_IMMED_LIT,.literal = (yyvsp[0].number)}; }
-#line 1264 "src/parser.tab.c"
+                    { instructionJump(assembler, INSTR_JMP, 0, 0, (yyvsp[0].operand)); }
+#line 1286 "src/parser.tab.c"
     break;
 
-  case 24: /* operand: '$' SYMBOL  */
+  case 25: /* instruction: jmp_opcode REG ',' REG ',' jmp_operand  */
 #line 99 "misc/parser.y"
-               { (yyval.operand) = (Operand){.type = OPERAND_TYPE_IMMED_SYM,.symbol = (yyvsp[0].string)}; }
-#line 1270 "src/parser.tab.c"
+                                           { instructionJump(assembler, (yyvsp[-5].instrType), (yyvsp[-4].number), (yyvsp[-2].number), (yyvsp[0].operand)); }
+#line 1292 "src/parser.tab.c"
     break;
 
-  case 25: /* operand: NUM  */
-#line 100 "misc/parser.y"
-        { (yyval.operand) = (Operand){.type = OPERAND_TYPE_MEMDIR_LIT,.literal = (yyvsp[0].number)}; }
-#line 1276 "src/parser.tab.c"
-    break;
-
-  case 26: /* operand: SYMBOL  */
-#line 101 "misc/parser.y"
-           { (yyval.operand) = (Operand){.type = OPERAND_TYPE_MEMDIR_SYM,.symbol = (yyvsp[0].string)}; }
-#line 1282 "src/parser.tab.c"
-    break;
-
-  case 27: /* operand: REG  */
-#line 102 "misc/parser.y"
-        { (yyval.operand) = (Operand){.type = OPERAND_TYPE_REGDIR,.reg = (yyvsp[0].number)}; }
-#line 1288 "src/parser.tab.c"
-    break;
-
-  case 28: /* operand: '[' REG ']'  */
+  case 26: /* operand: '$' NUM  */
 #line 103 "misc/parser.y"
-                { (yyval.operand) = (Operand){.type = OPERAND_TYPE_REGIND,.reg = (yyvsp[-1].number)}; }
-#line 1294 "src/parser.tab.c"
+          { (yyval.operand) = (Operand){.type = OPERAND_TYPE_IMMED_LIT,.literal = (yyvsp[0].number)}; }
+#line 1298 "src/parser.tab.c"
     break;
 
-  case 29: /* operand: '[' REG '+' NUM ']'  */
+  case 27: /* operand: '$' SYMBOL  */
 #line 104 "misc/parser.y"
-                        { (yyval.operand) = (Operand){.type = OPERAND_TYPE_REGIND_LIT,.reg = (yyvsp[-3].number),.literal = (yyvsp[-1].number)}; }
-#line 1300 "src/parser.tab.c"
+               { (yyval.operand) = (Operand){.type = OPERAND_TYPE_IMMED_SYM,.symbol = (yyvsp[0].string)}; }
+#line 1304 "src/parser.tab.c"
     break;
 
-  case 30: /* operand: '[' REG '+' SYMBOL ']'  */
+  case 28: /* operand: NUM  */
 #line 105 "misc/parser.y"
-                           { (yyval.operand) = (Operand){.type = OPERAND_TYPE_REGIND_SYM,.reg = (yyvsp[-3].number),.symbol = (yyvsp[-1].string)}; }
-#line 1306 "src/parser.tab.c"
+        { (yyval.operand) = (Operand){.type = OPERAND_TYPE_MEMDIR_LIT,.literal = (yyvsp[0].number)}; }
+#line 1310 "src/parser.tab.c"
     break;
 
-  case 31: /* noop_opcode: HALT  */
+  case 29: /* operand: SYMBOL  */
+#line 106 "misc/parser.y"
+           { (yyval.operand) = (Operand){.type = OPERAND_TYPE_MEMDIR_SYM,.symbol = (yyvsp[0].string)}; }
+#line 1316 "src/parser.tab.c"
+    break;
+
+  case 30: /* operand: REG  */
+#line 107 "misc/parser.y"
+        { (yyval.operand) = (Operand){.type = OPERAND_TYPE_REGDIR,.reg = (yyvsp[0].number)}; }
+#line 1322 "src/parser.tab.c"
+    break;
+
+  case 31: /* operand: '[' REG ']'  */
+#line 108 "misc/parser.y"
+                { (yyval.operand) = (Operand){.type = OPERAND_TYPE_REGIND,.reg = (yyvsp[-1].number)}; }
+#line 1328 "src/parser.tab.c"
+    break;
+
+  case 32: /* operand: '[' REG '+' NUM ']'  */
 #line 109 "misc/parser.y"
+                        { (yyval.operand) = (Operand){.type = OPERAND_TYPE_REGIND_LIT,.reg = (yyvsp[-3].number),.literal = (yyvsp[-1].number)}; }
+#line 1334 "src/parser.tab.c"
+    break;
+
+  case 33: /* operand: '[' REG '+' SYMBOL ']'  */
+#line 110 "misc/parser.y"
+                           { (yyval.operand) = (Operand){.type = OPERAND_TYPE_REGIND_SYM,.reg = (yyvsp[-3].number),.symbol = (yyvsp[-1].string)}; }
+#line 1340 "src/parser.tab.c"
+    break;
+
+  case 34: /* jmp_operand: NUM  */
+#line 114 "misc/parser.y"
+      { (yyval.operand) = (Operand){.type = OPERAND_TYPE_IMMED_LIT,.literal = (yyvsp[0].number)}; }
+#line 1346 "src/parser.tab.c"
+    break;
+
+  case 35: /* jmp_operand: SYMBOL  */
+#line 115 "misc/parser.y"
+           { (yyval.operand) = (Operand){.type = OPERAND_TYPE_IMMED_SYM,.symbol = (yyvsp[0].string)}; }
+#line 1352 "src/parser.tab.c"
+    break;
+
+  case 36: /* noop_opcode: HALT  */
+#line 119 "misc/parser.y"
        { (yyval.instrType) = INSTR_HALT; }
-#line 1312 "src/parser.tab.c"
+#line 1358 "src/parser.tab.c"
     break;
 
-  case 32: /* tworeg_opcode: ADD  */
-#line 113 "misc/parser.y"
+  case 37: /* tworeg_opcode: ADD  */
+#line 123 "misc/parser.y"
       { (yyval.instrType) = INSTR_ADD; }
-#line 1318 "src/parser.tab.c"
+#line 1364 "src/parser.tab.c"
     break;
 
-  case 33: /* label: SYMBOL ':'  */
-#line 117 "misc/parser.y"
+  case 38: /* jmp_opcode: BEQ  */
+#line 127 "misc/parser.y"
+      { (yyval.instrType) = INSTR_BEQ; }
+#line 1370 "src/parser.tab.c"
+    break;
+
+  case 39: /* jmp_opcode: BNE  */
+#line 128 "misc/parser.y"
+        { (yyval.instrType) = INSTR_BNE; }
+#line 1376 "src/parser.tab.c"
+    break;
+
+  case 40: /* jmp_opcode: BGT  */
+#line 129 "misc/parser.y"
+        { (yyval.instrType) = INSTR_BGT; }
+#line 1382 "src/parser.tab.c"
+    break;
+
+  case 41: /* label: SYMBOL ':'  */
+#line 133 "misc/parser.y"
              {
     insertSymLabel(assembler, (yyvsp[-1].string));
   }
-#line 1326 "src/parser.tab.c"
+#line 1390 "src/parser.tab.c"
     break;
 
-  case 34: /* SYMLIST: SYMBOL  */
-#line 122 "misc/parser.y"
+  case 42: /* SYMLIST: SYMBOL  */
+#line 138 "misc/parser.y"
                         { (yyval.stringvec) = VecStringCreate(); VecStringPush(&(yyval.stringvec), (yyvsp[0].string)); }
-#line 1332 "src/parser.tab.c"
+#line 1396 "src/parser.tab.c"
     break;
 
-  case 35: /* SYMLIST: SYMLIST ',' SYMBOL  */
-#line 123 "misc/parser.y"
+  case 43: /* SYMLIST: SYMLIST ',' SYMBOL  */
+#line 139 "misc/parser.y"
                         { (yyval.stringvec)=(yyvsp[-2].stringvec); VecStringPush(&(yyval.stringvec), (yyvsp[0].string)); }
-#line 1338 "src/parser.tab.c"
+#line 1402 "src/parser.tab.c"
     break;
 
-  case 36: /* EXPR_LIST: SYMBOL  */
-#line 126 "misc/parser.y"
+  case 44: /* EXPR_LIST: SYMBOL  */
+#line 142 "misc/parser.y"
           { (yyval.exprvec) = VecExprCreate(); VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_SYMBOL,.name = (yyvsp[0].string)});}
-#line 1344 "src/parser.tab.c"
+#line 1408 "src/parser.tab.c"
     break;
 
-  case 37: /* EXPR_LIST: NUM  */
-#line 127 "misc/parser.y"
+  case 45: /* EXPR_LIST: NUM  */
+#line 143 "misc/parser.y"
        {(yyval.exprvec) = VecExprCreate(); VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_NUMBER,.val = (yyvsp[0].number)});}
-#line 1350 "src/parser.tab.c"
+#line 1414 "src/parser.tab.c"
     break;
 
-  case 38: /* EXPR_LIST: EXPR_LIST ',' SYMBOL  */
-#line 128 "misc/parser.y"
+  case 46: /* EXPR_LIST: EXPR_LIST ',' SYMBOL  */
+#line 144 "misc/parser.y"
                         {VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_SYMBOL,.name = (yyvsp[0].string)});}
-#line 1356 "src/parser.tab.c"
+#line 1420 "src/parser.tab.c"
     break;
 
-  case 39: /* EXPR_LIST: EXPR_LIST ',' NUM  */
-#line 129 "misc/parser.y"
+  case 47: /* EXPR_LIST: EXPR_LIST ',' NUM  */
+#line 145 "misc/parser.y"
                      {VecExprPush(&(yyval.exprvec), (Expression){.type = EXPR_TYPE_NUMBER,.val = (yyvsp[0].number)});}
-#line 1362 "src/parser.tab.c"
+#line 1426 "src/parser.tab.c"
     break;
 
 
-#line 1366 "src/parser.tab.c"
+#line 1430 "src/parser.tab.c"
 
       default: break;
     }
@@ -1555,7 +1619,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 132 "misc/parser.y"
+#line 148 "misc/parser.y"
 
 
 void yyerror(const char* s) {

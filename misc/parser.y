@@ -36,7 +36,9 @@ extern struct Assembler *assembler;
 %token<number> SREG
 %type<instrType> noop_opcode
 %type<instrType> tworeg_opcode
+%type<instrType> jmp_opcode
 %type<operand> operand
+%type<operand> jmp_operand
 
 %%
 program:
@@ -87,11 +89,14 @@ directive:
 
 instruction:
   noop_opcode { instructionNoop(assembler, $1); }
-  | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
   | PUSH REG { instructionOnereg(assembler, INSTR_PUSH, $2); }
   | POP REG { instructionOnereg(assembler, INSTR_POP, $2); }
+  | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
   | LD operand ',' REG { instructionLoadStore(assembler, INSTR_LD, $2,$4); }
   | ST REG ',' operand { instructionLoadStore(assembler, INSTR_STR, $4, $2); }
+  | CALL jmp_operand { instructionJump(assembler, INSTR_CALL, 0, 0, $2); }
+  | JMP jmp_operand { instructionJump(assembler, INSTR_JMP, 0, 0, $2); }
+  | jmp_opcode REG ',' REG ',' jmp_operand { instructionJump(assembler, $1, $2, $4, $6); }
   ;
 
 operand:
@@ -105,12 +110,23 @@ operand:
   | '[' REG '+' SYMBOL ']' { $$ = (Operand){.type = OPERAND_TYPE_REGIND_SYM,.reg = $2,.symbol = $4}; }
   ;
 
+jmp_operand :
+  NUM { $$ = (Operand){.type = OPERAND_TYPE_IMMED_LIT,.literal = $1}; }
+  | SYMBOL { $$ = (Operand){.type = OPERAND_TYPE_IMMED_SYM,.symbol = $1}; }
+  ;
+
 noop_opcode:
   HALT { $$ = INSTR_HALT; }
   ;
 
 tworeg_opcode:
   ADD { $$ = INSTR_ADD; }
+  ;
+
+jmp_opcode:
+  BEQ { $$ = INSTR_BEQ; }
+  | BNE { $$ = INSTR_BNE; }
+  | BGT { $$ = INSTR_BGT; }
   ;
 
 label:

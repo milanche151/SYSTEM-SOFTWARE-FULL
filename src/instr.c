@@ -17,19 +17,34 @@ InstrDesc instr_descs[INSTR_TYPE_COUNT] = {
 
   },
   [INSTR_CALL] = {
-
+    .family = INSTR_FAMILY_TWOREG_ONEOP,
+    .opcode = 0x03,
+    .modifier = 0x00,
+    .name = "call",
   },
   [INSTR_JMP] = {
-
+    .family = INSTR_FAMILY_TWOREG_ONEOP,
+    .opcode = 0x03,
+    .modifier = 0x00,
+    .name = "jmp",
   },
   [INSTR_BEQ] = {
-
+    .family = INSTR_FAMILY_TWOREG_ONEOP,
+    .opcode = 0x03,
+    .modifier = 0x01,
+    .name = "beq",
   },
   [INSTR_BNE] = {
-
+    .family = INSTR_FAMILY_TWOREG_ONEOP,
+    .opcode = 0x03,
+    .modifier = 0x02,
+    .name = "bne",
   },
   [INSTR_BGT] = {
-
+    .family = INSTR_FAMILY_TWOREG_ONEOP,
+    .opcode = 0x03,
+    .modifier = 0x03,
+    .name = "bgt",
   },
   [INSTR_PUSH] = {
     .family = INSTR_FAMILY_ONEREG,
