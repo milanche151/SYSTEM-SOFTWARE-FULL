@@ -80,7 +80,10 @@ InstrDesc instr_descs[INSTR_TYPE_COUNT] = {
     .name = "LD"
   },
   [INSTR_STR] = {
-
+    .family = INSTR_FAMILY_STR,
+    .opcode = 0x08,
+    .modifier = 0x00,
+    .name = "STR"
   },
   [INSTR_CSRRD] = {
 

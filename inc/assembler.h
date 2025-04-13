@@ -161,6 +161,6 @@ void externSym(struct Assembler* assembler, VecString symlist);
 //_________________________________________instructions____________________________________________________
 void instructionNoop(struct Assembler *assembler, InstrType instr_type);
 void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD);
-void instructionLoad(struct Assembler *assembler,Operand operand, int regD);
+void instructionLoadStore(struct Assembler *assembler, InstrType instrType, Operand operand, int regD);
 
 #endif

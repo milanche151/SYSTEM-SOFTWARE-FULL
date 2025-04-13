@@ -88,7 +88,8 @@ directive:
 instruction:
   noop_opcode { instructionNoop(assembler, $1); }
   | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
-  | LD operand ',' REG { instructionLoad(assembler,$2,$4); }
+  | LD operand ',' REG { instructionLoadStore(assembler, INSTR_LD, $2,$4); }
+  | ST REG ',' operand { instructionLoadStore(assembler, INSTR_STR, $4, $2); }
   ;
 
 operand:

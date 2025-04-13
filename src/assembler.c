@@ -384,7 +384,7 @@ static bool canFitIn12bit(int dist){
 // this register's value is always 0 (reg0's value is always 0)
 #define REGISTER_ZERO 0
 
-void instructionLoad(struct Assembler *assembler, Operand operand, int regD){
+void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Operand operand, int regD){
   const InstrDesc *desc = instr_descs+INSTR_LD;
   assert(desc->family == INSTR_FAMILY_LD);
 
@@ -436,68 +436,118 @@ void instructionLoad(struct Assembler *assembler, Operand operand, int regD){
     case OPERAND_TYPE_REGIND:
     case OPERAND_TYPE_REGIND_LIT:
     case OPERAND_TYPE_REGIND_SYM:
+      // no need for literal pool entry
       break;
     default: assert(0);
     }
-
-    switch(operand.type){
-    case OPERAND_TYPE_IMMED_LIT:
-      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
-      VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
-      VecBytePush(&current_section->machineCode, 0x00 << 4 | 0x00);
-      VecBytePush(&current_section->machineCode, 0x00);
-      break;
-    case OPERAND_TYPE_IMMED_SYM:
-      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
-      VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
-      VecBytePush(&current_section->machineCode, 0x00 << 4 | 0x00);
-      VecBytePush(&current_section->machineCode, 0x00);
-      break;
-    case OPERAND_TYPE_MEMDIR_LIT:  
-      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
-      VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
-      VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
-      VecBytePush(&current_section->machineCode, 0x00);
-      break;
-    case OPERAND_TYPE_MEMDIR_SYM: 
-      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
-      VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
-      VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
-      VecBytePush(&current_section->machineCode, 0x00);
-      break;
-    case OPERAND_TYPE_REGDIR:
-      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
-      VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
-      VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
-      VecBytePush(&current_section->machineCode, 0x00);
-      break;
-    case OPERAND_TYPE_REGIND:
-      VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
-      VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
-      VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
-      VecBytePush(&current_section->machineCode, 0x00);
-      break;
-    case OPERAND_TYPE_REGIND_LIT:
-      if(canFitIn12bit(operand.literal)){ 
+    if(instrType == INSTR_LD){
+      switch(operand.type){
+      case OPERAND_TYPE_IMMED_LIT:
+        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
+        VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
+        VecBytePush(&current_section->machineCode, 0x00 << 4 | 0x00);
+        VecBytePush(&current_section->machineCode, 0x00);
+        break;
+      case OPERAND_TYPE_IMMED_SYM:
+        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
+        VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
+        VecBytePush(&current_section->machineCode, 0x00 << 4 | 0x00);
+        VecBytePush(&current_section->machineCode, 0x00);
+        break;
+      case OPERAND_TYPE_MEMDIR_LIT:  
+        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
+        VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
+        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
+        VecBytePush(&current_section->machineCode, 0x00);
+        break;
+      case OPERAND_TYPE_MEMDIR_SYM: 
+        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
+        VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
+        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
+        VecBytePush(&current_section->machineCode, 0x00);
+        break;
+      case OPERAND_TYPE_REGDIR:
+        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
+        VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
+        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
+        VecBytePush(&current_section->machineCode, 0x00);
+        break;
+      case OPERAND_TYPE_REGIND:
         VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
         VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
-        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | (operand.literal>>8 & 0x0f));
-        VecBytePush(&current_section->machineCode, operand.literal & 0xff);
-      }
-      else {
+        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
+        VecBytePush(&current_section->machineCode, 0x00);
+        break;
+      case OPERAND_TYPE_REGIND_LIT:
+        if(canFitIn12bit(operand.literal)){ 
+          VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
+          VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
+          VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | (operand.literal>>8 & 0x0f));
+          VecBytePush(&current_section->machineCode, operand.literal & 0xff);
+        }
+        else {
+          assembler->correct = false;
+        }
+        break;
+      case OPERAND_TYPE_REGIND_SYM:
         assembler->correct = false;
+        break;
+      default:assert(0);
       }
-      break;
-    case OPERAND_TYPE_REGIND_SYM:
-      assembler->correct = false;
-      break;
     }
+    else if(instrType == INSTR_STR){
+      switch(operand.type){
+      case OPERAND_TYPE_IMMED_LIT:
+      case OPERAND_TYPE_IMMED_SYM:
+        assembler->correct = false;
+        break;
+      case OPERAND_TYPE_MEMDIR_LIT:  
+        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x00);
+        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | REGISTER_ZERO);
+        VecBytePush(&current_section->machineCode, regD << 4 | 0x00);
+        VecBytePush(&current_section->machineCode, 0x00);
+        break;
+      case OPERAND_TYPE_MEMDIR_SYM: 
+        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x00);
+        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | REGISTER_ZERO);
+        VecBytePush(&current_section->machineCode, regD << 4 | 0x00);
+        VecBytePush(&current_section->machineCode, 0x00);
+        break;
+      case OPERAND_TYPE_REGDIR:
+        assembler->correct = false;
+        break;
+      case OPERAND_TYPE_REGIND:
+        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x00);
+        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | operand.reg);
+        VecBytePush(&current_section->machineCode, regD << 4 | 0x00);
+        VecBytePush(&current_section->machineCode, 0x00);
+        break;
+      case OPERAND_TYPE_REGIND_LIT:
+        if(canFitIn12bit(operand.literal)){ 
+          VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x00);
+          VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | operand.reg);
+          VecBytePush(&current_section->machineCode, regD << 4 | (operand.literal>>8 & 0x0f));
+          VecBytePush(&current_section->machineCode, operand.literal & 0xff);
+        }
+        else {
+          assembler->correct = false;
+        }
+        break;
+      case OPERAND_TYPE_REGIND_SYM:
+        assembler->correct = false;
+        break;
+      }
+    }
+    else{
+      assert(0);
+    }
+    
 
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
-        .type=INSTR_LD,
+        .type = instrType,
         .operand = operand,
         .reg2 = regD,
       }
@@ -588,6 +638,9 @@ static void linePrint(const Line* line){
     case INSTR_FAMILY_LD:
       printf("LOAD INSTR");
       break;
+    case INSTR_FAMILY_STR:
+      printf("STORE INSTR");
+      break;
     default: assert(0);
     }
   } break;
@@ -612,10 +665,14 @@ void assemblerPrint(const struct Assembler* assembler){
   for(size_t i = 0; i < assembler->sections.size; i++){
     const Section* section = &assembler->sections.data[i];
     printf("Section index = %lu\n", section->symtabIndex);
-    printf("Section size = %lu\n", section->machineCode.size);
+    printf("Section size = %lu (+%lu bytes for literals)\n", section->machineCode.size, section->litPool.size * 4);
+
+    size_t n_print = 0;
+
     for(size_t j = 0; j < section->machineCode.size; j++){
       printf("%02x", section->machineCode.data[j]);
-      if(j % 8 == 7) printf("\n");
+      n_print += 1;
+      if(n_print % 8 == 0) printf("\n");
       else printf(" ");
     }
     for(size_t j = 0; j < section->litPool.size; j++){
@@ -625,7 +682,8 @@ void assemblerPrint(const struct Assembler* assembler){
         (section->litPool.data[j].value >> 16) & 0xff,
         (section->litPool.data[j].value >> 24) & 0xff
       );
-      if(j % 2 == 1) printf("\n");
+      n_print += 4;
+      if(n_print % 8 == 0) printf("\n");
       else printf(" ");
     }
     printf("\n");
