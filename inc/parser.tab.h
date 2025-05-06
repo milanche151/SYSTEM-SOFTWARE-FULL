@@ -1,137 +1,168 @@
-/* A Bison parser, made by GNU Bison 3.8.2.  */
+#ifndef _ASEMBLER_H
+#define _ASEMBLER_H
 
-/* Bison interface for Yacc-like parsers in C
+#include <inttypes.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+#include "vector.h"
+#include "instr.h"
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
-   Inc.
+VECTOR_DECLARE(VecString, char*);
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
+typedef enum{
+  SYM_TBL_TYPE_NOTYPE,
+  SYM_TBL_TYPE_FILE_T,
+  SYM_TBL_TYPE_SECTION,
+  SYM_TBL_TYPE_OBJECT,
+  SYM_TBL_TYPE_FUNCTION,
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+  SYM_TBL_TYPE_COUNT,
+}symTableType;
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+typedef enum{
+  FORWARD_REF_DATA32,
+  FORWARD_REF_LITPOOL_NUM, // this refers to literal with index lit_idx
+  FORWARD_REF_LITPOOL_SYM, // this refers to literal with index lit_idx
 
-/* As a special exception, you may create a larger work that contains
-   part or all of the Bison parser skeleton and distribute that work
-   under terms of your choice, so long as that work isn't itself a
-   parser generator using the skeleton or a modified version thereof
-   as a parser skeleton.  Alternatively, if you modify or redistribute
-   the parser skeleton itself, you may (at your option) remove this
-   special exception, which will cause the skeleton and the resulting
-   Bison output files to be licensed under the GNU General Public
-   License without this special exception.
+  FORWARD_REF_TYPE_COUNT,
 
-   This special exception was added by the Free Software Foundation in
-   version 2.2 of Bison.  */
+}ForwardRefType;
 
-/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
-   especially those whose name start with YY_ or yy_.  They are
-   private implementation details that can be changed or removed.  */
+typedef struct ForwardRef{
+  size_t offset;
+  ForwardRefType type;
+  const char *name;
+  int addend;
+  size_t lit_idx;
+} ForwardRef;
 
-#ifndef YY_YY_INC_PARSER_TAB_H_INCLUDED
-# define YY_YY_INC_PARSER_TAB_H_INCLUDED
-/* Debug traces.  */
-#ifndef YYDEBUG
-# define YYDEBUG 0
-#endif
-#if YYDEBUG
-extern int yydebug;
-#endif
-/* "%code requires" blocks.  */
-#line 16 "misc/parser.y"
+VECTOR_DECLARE(VecForwardRef, ForwardRef);
 
-  #include "assembler.h"
-  #include "vector.h"
+typedef enum RelocationType{
+  RELOCATION_TYPE_DATA32,
 
-#line 54 "inc/parser.tab.h"
+  RELOACTION_TYPE_COUNT,
+}RelocationType;
 
-/* Token kinds.  */
-#ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-  enum yytokentype
-  {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
-    GLOBAL = 258,                  /* GLOBAL  */
-    EXTERN = 259,                  /* EXTERN  */
-    ENDL = 260,                    /* ENDL  */
-    SECTION = 261,                 /* SECTION  */
-    COLON = 262,                   /* COLON  */
-    WORD = 263,                    /* WORD  */
-    SKIP = 264,                    /* SKIP  */
-    ASCII = 265,                   /* ASCII  */
-    EQU = 266,                     /* EQU  */
-    END = 267,                     /* END  */
-    HALT = 268,                    /* HALT  */
-    INT = 269,                     /* INT  */
-    IRET = 270,                    /* IRET  */
-    CALL = 271,                    /* CALL  */
-    RET = 272,                     /* RET  */
-    JMP = 273,                     /* JMP  */
-    BEQ = 274,                     /* BEQ  */
-    BNE = 275,                     /* BNE  */
-    BGT = 276,                     /* BGT  */
-    PUSH = 277,                    /* PUSH  */
-    POP = 278,                     /* POP  */
-    XCHG = 279,                    /* XCHG  */
-    ADD = 280,                     /* ADD  */
-    SUB = 281,                     /* SUB  */
-    MUL = 282,                     /* MUL  */
-    DIV = 283,                     /* DIV  */
-    NOT = 284,                     /* NOT  */
-    AND = 285,                     /* AND  */
-    OR = 286,                      /* OR  */
-    XOR = 287,                     /* XOR  */
-    SHL = 288,                     /* SHL  */
-    SHR = 289,                     /* SHR  */
-    LD = 290,                      /* LD  */
-    ST = 291,                      /* ST  */
-    CSRRD = 292,                   /* CSRRD  */
-    CSRWR = 293,                   /* CSRWR  */
-    SYMBOL = 294,                  /* SYMBOL  */
-    STRING = 295,                  /* STRING  */
-    NUM = 296,                     /* NUM  */
-    REG = 297,                     /* REG  */
-    SREG = 298                     /* SREG  */
-  };
-  typedef enum yytokentype yytoken_kind_t;
-#endif
+typedef struct Relocation{
+  size_t offset;
+  ForwardRefType type;
+  size_t symbolIndex;
+  int addend;
+} Relocation;
 
-/* Value type.  */
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-union YYSTYPE
+VECTOR_DECLARE(VecRelocation, Relocation);
+
+typedef enum{
+  BIND_TYPE_LOCAL,
+  BIND_TYPE_GLOBAL
+}symTableBind;
+
+typedef struct SymTableRow{
+ char* name;
+ size_t section;
+ uint32_t value;
+ symTableType type;
+ bool defined;
+ symTableBind bind;
+} SymTableRow;
+
+VECTOR_DECLARE(VecSymTbl,SymTableRow);
+
+typedef enum ExprType{
+  EXPR_TYPE_SYMBOL,
+  EXPR_TYPE_NUMBER,
+} ExpressionType;
+
+typedef struct Expression{
+  ExpressionType type;
+  uint32_t val;
+  char* name;
+} Expression;
+
+VECTOR_DECLARE(VecExpr, Expression);
+
+typedef enum LineType {
+  LINE_TYPE_DIRECTIVE,
+  LINE_TYPE_INSTRUCITON,
+} LineType;
+
+typedef struct Line{
+  LineType type;
+  struct Directive {
+    enum DirectiveType {
+      DIRECTIVE_TYPE_WORD,
+      DIRECTIVE_TYPE_SKIP,
+      DIRECTIVE_TYPE_ASCII,
+    }type;
+
+    VecExpr expressions;
+    char *string;
+
+  } directive;
+  Instruction instruction;
+}Line;
+
+VECTOR_DECLARE(VecLine, Line);
+
+VECTOR_DECLARE(VecByte, unsigned char);
+
+typedef struct LitPoolEntry {
+  int value;
+} LitPoolEntry;
+
+VECTOR_DECLARE(VecLitPoolEntry, LitPoolEntry);
+
+typedef struct Section
 {
-#line 20 "misc/parser.y"
+  size_t symtabIndex;
+  VecByte machineCode;
+  VecLine lines;
 
-  int number;
-  char *string;
-  VecString stringvec;
-  VecExpr exprvec;
-  InstrType instrType;
-  Operand operand;
+  VecLitPoolEntry litPool;
 
-#line 123 "inc/parser.tab.h"
+  VecForwardRef forwardRefs;
+  VecRelocation relocations;
+}Section;
 
+VECTOR_DECLARE(VecSection, Section);
+
+struct Assembler {
+  VecSection sections;
+  VecSymTbl symbolTable;
+  bool correct;
 };
-typedef union YYSTYPE YYSTYPE;
-# define YYSTYPE_IS_TRIVIAL 1
-# define YYSTYPE_IS_DECLARED 1
+
+#include "parser.tab.h"
+
+struct Assembler assemblerCreate(void);
+void assemblerDestroy(struct Assembler *assembler);
+void assemblerPrint(const struct Assembler* assembler);
+void AssemblerEndOfFile(struct Assembler *assembler);
+
+//_________________________________________misc_functions________________________________________________
+void insertSymSection(struct Assembler* assembler, char* name);
+void insertSymLabel(struct Assembler* assembler, char* name);
+void insertSymExtern(struct Assembler* assembler, char *name);
+void declareSymGlobal(struct Assembler* assembler, char *name);
+
+void printSymTable(const struct Assembler* assembler);
+void initSymbolTable(struct Assembler* assembler);
+
+//_________________________________________directives____________________________________________________
+void section(struct Assembler* assembler, char* symbol);
+void global(struct Assembler* assembler, VecString symlist);
+void word(struct Assembler* assembler, VecExpr expresions);
+void ascii(struct Assembler* assembler, char* string);
+void externSym(struct Assembler* assembler, VecString symlist);
+
+//_________________________________________instructions____________________________________________________
+void instructionNoop(struct Assembler *assembler, InstrType instr_type);
+void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int reg);
+void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD);
+void instructionLoadStore(struct Assembler *assembler, InstrType instrType, Operand operand, int regD);
+void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand);
+
 #endif
-
-
-extern YYSTYPE yylval;
-
-
-int yyparse (void);
-
-
-#endif /* !YY_YY_INC_PARSER_TAB_H_INCLUDED  */
