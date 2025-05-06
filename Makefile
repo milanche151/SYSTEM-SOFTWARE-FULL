@@ -18,4 +18,3 @@ default:
 # 	gcc -c ./src/assembler.c -o  asembler
 # 	gcc -c test3.c -o  test3
 # 	gcc test3 asembler -o result
-

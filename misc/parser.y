@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "instr.h"
+
 extern int yylex();
 extern FILE *yyin;
  
@@ -20,6 +22,8 @@ extern struct Assembler *assembler;
   char *string;
   VecString stringvec;
   VecExpr exprvec;
+  InstrType instrType;
+  Operand operand;
 }
 
 %token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR
@@ -27,14 +31,19 @@ extern struct Assembler *assembler;
 %token<string> STRING
 %type<stringvec> SYMLIST
 %type<exprvec> EXPR_LIST
-%token<number> NUM 
-%token<string> COMMA
-%token<string> REG
-%token<string> SREG
+%token<number> NUM
+%token<number> REG
+%token<number> SREG
+%type<instrType> noop_opcode
+%type<instrType> tworeg_opcode
+%type<instrType> jmp_opcode
+%type<operand> operand
+%type<operand> jmp_operand
 
 %%
 program:
-  lines;
+  lines { AssemblerEndOfFile(assembler); }
+  ;
 
 lines:
   lines ENDL line 
@@ -46,6 +55,8 @@ line:
   label
   | label directive 
   | directive
+  | label instruction 
+  | instruction
   ;
 
 directive:
@@ -67,7 +78,56 @@ directive:
   |
   ASCII STRING {
     ascii(assembler,$2);
-  };
+  }
+  |
+  END {
+   
+    AssemblerEndOfFile(assembler);
+    YYACCEPT;
+  }
+  ;
+
+instruction:
+  noop_opcode { instructionNoop(assembler, $1); }
+  | PUSH REG { instructionOnereg(assembler, INSTR_PUSH, $2); }
+  | POP REG { instructionOnereg(assembler, INSTR_POP, $2); }
+  | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
+  | LD operand ',' REG { instructionLoadStore(assembler, INSTR_LD, $2,$4); }
+  | ST REG ',' operand { instructionLoadStore(assembler, INSTR_STR, $4, $2); }
+  | CALL jmp_operand { instructionJump(assembler, INSTR_CALL, 0, 0, $2); }
+  | JMP jmp_operand { instructionJump(assembler, INSTR_JMP, 0, 0, $2); }
+  | jmp_opcode REG ',' REG ',' jmp_operand { instructionJump(assembler, $1, $2, $4, $6); }
+  ;
+
+operand:
+  '$' NUM { $$ = (Operand){.type = OPERAND_TYPE_IMMED_LIT,.literal = $2}; }
+  | '$' SYMBOL { $$ = (Operand){.type = OPERAND_TYPE_IMMED_SYM,.symbol = $2}; }
+  | NUM { $$ = (Operand){.type = OPERAND_TYPE_MEMDIR_LIT,.literal = $1}; }
+  | SYMBOL { $$ = (Operand){.type = OPERAND_TYPE_MEMDIR_SYM,.symbol = $1}; }
+  | REG { $$ = (Operand){.type = OPERAND_TYPE_REGDIR,.reg = $1}; }
+  | '[' REG ']' { $$ = (Operand){.type = OPERAND_TYPE_REGIND,.reg = $2}; }
+  | '[' REG '+' NUM ']' { $$ = (Operand){.type = OPERAND_TYPE_REGIND_LIT,.reg = $2,.literal = $4}; }
+  | '[' REG '+' SYMBOL ']' { $$ = (Operand){.type = OPERAND_TYPE_REGIND_SYM,.reg = $2,.symbol = $4}; }
+  ;
+
+jmp_operand :
+  NUM { $$ = (Operand){.type = OPERAND_TYPE_IMMED_LIT,.literal = $1}; }
+  | SYMBOL { $$ = (Operand){.type = OPERAND_TYPE_IMMED_SYM,.symbol = $1}; }
+  ;
+
+noop_opcode:
+  HALT { $$ = INSTR_HALT; }
+  ;
+
+tworeg_opcode:
+  ADD { $$ = INSTR_ADD; }
+  ;
+
+jmp_opcode:
+  BEQ { $$ = INSTR_BEQ; }
+  | BNE { $$ = INSTR_BNE; }
+  | BGT { $$ = INSTR_BGT; }
+  ;
 
 label:
   SYMBOL ':' {
