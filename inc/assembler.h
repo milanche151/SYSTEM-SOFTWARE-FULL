@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "vector.h"
+#include "instr.h"
 
 VECTOR_DECLARE(VecString, char*);
 
@@ -22,17 +23,19 @@ typedef enum{
 
 typedef enum{
   FORWARD_REF_DATA32,
-  //FORWARD_REF_PC12,
+  FORWARD_REF_LITPOOL_NUM, // this refers to literal with index lit_idx
+  FORWARD_REF_LITPOOL_SYM, // this refers to literal with index lit_idx
 
   FORWARD_REF_TYPE_COUNT,
 
 }ForwardRefType;
 
 typedef struct ForwardRef{
-  uint32_t offset;
+  size_t offset;
   ForwardRefType type;
   const char *name;
   int addend;
+  size_t lit_idx;
 } ForwardRef;
 
 VECTOR_DECLARE(VecForwardRef, ForwardRef);
@@ -44,7 +47,7 @@ typedef enum RelocationType{
 }RelocationType;
 
 typedef struct Relocation{
-  uint32_t offset;
+  size_t offset;
   ForwardRefType type;
   size_t symbolIndex;
   int addend;
@@ -99,17 +102,26 @@ typedef struct Line{
     char *string;
 
   } directive;
+  Instruction instruction;
 }Line;
 
 VECTOR_DECLARE(VecLine, Line);
 
 VECTOR_DECLARE(VecByte, unsigned char);
 
+typedef struct LitPoolEntry {
+  int value;
+} LitPoolEntry;
+
+VECTOR_DECLARE(VecLitPoolEntry, LitPoolEntry);
+
 typedef struct Section
 {
   size_t symtabIndex;
   VecByte machineCode;
   VecLine lines;
+
+  VecLitPoolEntry litPool;
 
   VecForwardRef forwardRefs;
   VecRelocation relocations;
@@ -128,6 +140,7 @@ struct Assembler {
 struct Assembler assemblerCreate(void);
 void assemblerDestroy(struct Assembler *assembler);
 void assemblerPrint(const struct Assembler* assembler);
+void AssemblerEndOfFile(struct Assembler *assembler);
 
 //_________________________________________misc_functions________________________________________________
 void insertSymSection(struct Assembler* assembler, char* name);
@@ -145,6 +158,11 @@ void word(struct Assembler* assembler, VecExpr expresions);
 void ascii(struct Assembler* assembler, char* string);
 void externSym(struct Assembler* assembler, VecString symlist);
 
-
+//_________________________________________instructions____________________________________________________
+void instructionNoop(struct Assembler *assembler, InstrType instr_type);
+void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int reg);
+void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD);
+void instructionLoadStore(struct Assembler *assembler, InstrType instrType, Operand operand, int regD);
+void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand);
 
 #endif
