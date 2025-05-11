@@ -43,9 +43,9 @@ ld {return LD;}
 st {return ST;}
 csrrd {return CSRRD;}
 csrwr {return CSRWR;}
-%cause {yylval.number=2;return SREG;}
-%handler {yylval.number=1;return SREG;}
-%status {yylval.number=0;return SREG;}
+"%cause" {yylval.number=2;return SREG;}
+"%handler" {yylval.number=1;return SREG;}
+"%status" {yylval.number=0;return SREG;}
 " " { }
 % {return '%';}
 \n {return ENDL;}

@@ -192,22 +192,30 @@ void printSymTable(const struct Assembler* assembler){
     [SYM_TBL_TYPE_FUNCTION] = "Function",
   };
 
+  const char *symbol_bind_print[BIND_TYPE_COUNT] = {
+    [BIND_TYPE_LOCAL] = "LOCAL",
+    [BIND_TYPE_GLOBAL] = "GLOBAL",
+  };
+
   printf("Symtab:\n");
-  printf("%-5s %-10s %-10s %-10s %-10s %-10s\n",
+  printf("%-5s %-10s %-10s %-10s %-10s %-10s %-10s\n",
     "Num",
     "Name",
     "Section",
+    "Binding",
     "Value",
     "Type",
     "Status"
   );
+
   for(size_t i = 0; i < assembler->symbolTable.size; i++){
     const SymTableRow *row = &assembler->symbolTable.data[i];
 
-    printf("%-5lu %-10s %-10s %-10d %-10s %-10s\n",
+    printf("%-5lu %-10s %-10s %-10s %-10d %-10s %-10s\n",
       i,
       row->name,
       assembler->symbolTable.data[row->section].name,
+      symbol_bind_print[row->bind],
       row->value,
       symbol_type_print[row->type],
       row->defined ? "Defined" : "Not def"
@@ -329,6 +337,25 @@ void ascii(struct Assembler* assembler, char* string){
 #define REGISTER_ZERO 0x0
 #define REGISTER_SP 0xE
 #define REGISTER_PC 0xF
+#define REGISTER_CSR_STATUS 0x0
+
+void insertGenericInstruction(struct Assembler *assembler, int opcode, int modifier, int gprA, int gprB, int gprC, int disp){
+  assert(opcode >= 0x00 && opcode < 0x10);
+  assert(modifier >= 0x00 && modifier < 0x10);
+  assert(gprA >= 0x00 && gprA < 0x10);
+  assert(gprB >= 0x00 && gprB < 0x10);
+  assert(gprC >= 0x00 && gprC < 0x10);
+  assert(disp >= -0x0800 && disp < 0x0800);
+
+  assert(assembler->sections.size > 0);
+
+  Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
+
+  VecBytePush(&current_section->machineCode, (opcode << 4) & 0xf0 | (modifier << 0) & 0x0f);
+  VecBytePush(&current_section->machineCode, (gprA   << 4) & 0xf0 | (gprB     << 0) & 0x0f);
+  VecBytePush(&current_section->machineCode, (gprC   << 4) & 0xf0 | (disp     >> 8) & 0x0f);
+  VecBytePush(&current_section->machineCode, (disp   >> 0) & 0xff);
+}
 
 void instructionNoop(struct Assembler *assembler, InstrType instr_type){
   const InstrDesc* desc = instr_descs+instr_type;
@@ -336,10 +363,7 @@ void instructionNoop(struct Assembler *assembler, InstrType instr_type){
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
 
-    VecBytePush(&current_section->machineCode, (desc->opcode << 4) | (desc->modifier));
-    VecBytePush(&current_section->machineCode, 0x00);
-    VecBytePush(&current_section->machineCode, 0x00);
-    VecBytePush(&current_section->machineCode, 0x00);
+    insertGenericInstruction(assembler, desc->opcode, desc->modifier, 0, 0, 0, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
@@ -355,7 +379,29 @@ void instructionNoop(struct Assembler *assembler, InstrType instr_type){
   
 }
 
-#define STACK_DISP 0x4
+#define STACK_DISP 4
+
+void instructionRet(struct Assembler *assembler){
+  if(assembler->sections.size > 0){
+    insertGenericInstruction(assembler, 0x09, 0x03, REGISTER_PC, REGISTER_SP, 0, +STACK_DISP);
+  }
+  else {
+    assembler->correct = false;
+  }
+}
+
+void instructionIret(struct Assembler *assembler){
+  if(assembler->sections.size > 0){
+
+    insertGenericInstruction(assembler, 0x09, 0x01, REGISTER_SP, REGISTER_SP, 0, 2 * STACK_DISP);
+    insertGenericInstruction(assembler, 0x09, 0x06, REGISTER_CSR_STATUS, REGISTER_SP, REGISTER_ZERO, -1 * STACK_DISP);
+    insertGenericInstruction(assembler, 0x09, 0x02, REGISTER_PC, REGISTER_SP, REGISTER_ZERO, -2 * STACK_DISP);
+  }
+
+  else {
+    assembler->correct = false;
+  }
+}
 
 void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int reg){
   const InstrDesc* desc = instr_descs+instr_type;
@@ -365,16 +411,10 @@ void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int re
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
 
     if(instr_type == INSTR_PUSH){
-      VecBytePush(&current_section->machineCode, (desc->opcode << 4) | (desc->modifier));
-      VecBytePush(&current_section->machineCode, (REGISTER_SP << 4) | 0x00);
-      VecBytePush(&current_section->machineCode, reg << 4 | (-STACK_DISP >> 8 & 0x0f));
-      VecBytePush(&current_section->machineCode, ((-STACK_DISP >> 0) & 0xff));
+      insertGenericInstruction(assembler, desc->opcode, desc->modifier, REGISTER_SP, 0, reg, -STACK_DISP);
     }
     else if(instr_type == INSTR_POP){
-      VecBytePush(&current_section->machineCode, (desc->opcode << 4) | (desc->modifier));
-      VecBytePush(&current_section->machineCode, (reg << 4) | REGISTER_SP);
-      VecBytePush(&current_section->machineCode, 0x00 << 4 | (STACK_DISP >> 8 & 0x0f));
-      VecBytePush(&current_section->machineCode, ((STACK_DISP >> 0) & 0xff));
+      insertGenericInstruction(assembler, desc->opcode, desc->modifier, reg, REGISTER_SP, 0, +STACK_DISP);
     }
     else assert(0);
 
@@ -398,11 +438,8 @@ void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int re
 
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
-
-    VecBytePush(&current_section->machineCode, (desc->opcode << 4) | (desc->modifier));
-    VecBytePush(&current_section->machineCode, (regD<< 4) | regD);
-    VecBytePush(&current_section->machineCode, regS << 4);
-    VecBytePush(&current_section->machineCode, 0x00);
+    
+    insertGenericInstruction(assembler, desc->opcode, desc->modifier, regD, regD, regS, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
@@ -482,47 +519,26 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
     if(instrType == INSTR_LD){
       switch(operand.type){
       case OPERAND_TYPE_IMMED_LIT:
-        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
-        VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
-        VecBytePush(&current_section->machineCode, 0x00 << 4 | 0x00);
-        VecBytePush(&current_section->machineCode, 0x00);
+        insertGenericInstruction(assembler, desc->opcode, 0x01, regD, REGISTER_ZERO, 0, 0);
         break;
       case OPERAND_TYPE_IMMED_SYM:
-        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
-        VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
-        VecBytePush(&current_section->machineCode, 0x00 << 4 | 0x00);
-        VecBytePush(&current_section->machineCode, 0x00);
+        insertGenericInstruction(assembler, desc->opcode, 0x01, regD, REGISTER_ZERO, 0, 0);
         break;
-      case OPERAND_TYPE_MEMDIR_LIT:  
-        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
-        VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
-        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
-        VecBytePush(&current_section->machineCode, 0x00);
+      case OPERAND_TYPE_MEMDIR_LIT:
+        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_ZERO, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_MEMDIR_SYM: 
-        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
-        VecBytePush(&current_section->machineCode, regD<<4 | REGISTER_ZERO);
-        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
-        VecBytePush(&current_section->machineCode, 0x00);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_ZERO, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGDIR:
-        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x01);
-        VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
-        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
-        VecBytePush(&current_section->machineCode, 0x00);
+        insertGenericInstruction(assembler, desc->opcode, 0x01, regD, operand.reg, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGIND:
-        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
-        VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
-        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | 0x00);
-        VecBytePush(&current_section->machineCode, 0x00);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, operand.reg, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGIND_LIT:
-        if(canFitIn12bit(operand.literal)){ 
-          VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x02);
-          VecBytePush(&current_section->machineCode, regD<<4 | operand.reg);
-          VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | (operand.literal>>8 & 0x0f));
-          VecBytePush(&current_section->machineCode, operand.literal & 0xff);
+        if(canFitIn12bit(operand.literal)){
+          insertGenericInstruction(assembler, desc->opcode, 0x02, regD, operand.reg, REGISTER_ZERO, operand.literal);
         }
         else {
           assembler->correct = false;
@@ -540,33 +556,21 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
       case OPERAND_TYPE_IMMED_SYM:
         assembler->correct = false;
         break;
-      case OPERAND_TYPE_MEMDIR_LIT:  
-        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x00);
-        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | REGISTER_ZERO);
-        VecBytePush(&current_section->machineCode, regD << 4 | 0x00);
-        VecBytePush(&current_section->machineCode, 0x00);
+      case OPERAND_TYPE_MEMDIR_LIT:
+        insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, REGISTER_ZERO, regD, 0);
         break;
-      case OPERAND_TYPE_MEMDIR_SYM: 
-        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x00);
-        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | REGISTER_ZERO);
-        VecBytePush(&current_section->machineCode, regD << 4 | 0x00);
-        VecBytePush(&current_section->machineCode, 0x00);
+      case OPERAND_TYPE_MEMDIR_SYM:
+        insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, REGISTER_ZERO, regD, 0);
         break;
       case OPERAND_TYPE_REGDIR:
         assembler->correct = false;
         break;
       case OPERAND_TYPE_REGIND:
-        VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x00);
-        VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | operand.reg);
-        VecBytePush(&current_section->machineCode, regD << 4 | 0x00);
-        VecBytePush(&current_section->machineCode, 0x00);
+        insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, operand.reg, regD, 0);
         break;
       case OPERAND_TYPE_REGIND_LIT:
-        if(canFitIn12bit(operand.literal)){ 
-          VecBytePush(&current_section->machineCode, desc->opcode<<4 | 0x00);
-          VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | operand.reg);
-          VecBytePush(&current_section->machineCode, regD << 4 | (operand.literal>>8 & 0x0f));
-          VecBytePush(&current_section->machineCode, operand.literal & 0xff);
+        if(canFitIn12bit(operand.literal)){
+          insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, operand.reg, regD, operand.literal);
         }
         else {
           assembler->correct = false;
@@ -596,19 +600,32 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
   }
 }
 
+void instructionCSRReadWrite(struct Assembler *assembler, InstrType instr_type, int regGPR, int regCSR){
+  const InstrDesc *desc = instr_descs+instr_type;
+  assert(desc->family == INSTR_FAMILY_CSRRD || desc->family == INSTR_FAMILY_CSRWR);
+
+  if(assembler->sections.size > 0){
+    Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
+
+    if(instr_type == INSTR_CSRRD){
+      insertGenericInstruction(assembler, desc->opcode, desc->modifier, regGPR, regCSR, 0, 0);
+    }
+    else if(instr_type == INSTR_CSRWR){
+      insertGenericInstruction(assembler, desc->opcode, desc->modifier, regCSR, regGPR, 0, 0);
+    }
+    else assert(0);
+  }
+  else {
+    assembler->correct = false;
+}
+}
+
 void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand){
   const InstrDesc *desc = instr_descs+instrType;
   assert(desc->family == INSTR_FAMILY_TWOREG_ONEOP);
 
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
-
-    if(instrType == INSTR_CALL){
-      VecBytePush(&current_section->machineCode, (instr_descs[INSTR_PUSH].opcode << 4) | (instr_descs[INSTR_PUSH].modifier));
-      VecBytePush(&current_section->machineCode, (REGISTER_SP << 4) | 0x00);
-      VecBytePush(&current_section->machineCode, REGISTER_PC << 4 | (-STACK_DISP >> 8 & 0x0f));
-      VecBytePush(&current_section->machineCode, ((-STACK_DISP >> 0) & 0xff));
-    }
 
     //litpool 
     switch(operand.type){
@@ -635,10 +652,7 @@ void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1,
     }
 
     //insert code
-    VecBytePush(&current_section->machineCode, desc->opcode<<4 | desc->modifier);
-    VecBytePush(&current_section->machineCode, REGISTER_ZERO << 4 | reg1);
-    VecBytePush(&current_section->machineCode, reg2 << 4 | 0x00);
-    VecBytePush(&current_section->machineCode, 0x00);
+    insertGenericInstruction(assembler, desc->opcode, desc->modifier, REGISTER_ZERO, reg1, reg2, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,

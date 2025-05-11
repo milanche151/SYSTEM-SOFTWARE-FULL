@@ -11,13 +11,20 @@
 # st %r8, a
 # st %r9, [%r4]
 # st %r14, [%r8 + 0xfffffffc]
-# push %r9
-# pop %r8
-jmp c
-call a
-beq %r1, %r1, b
-bgt %r2, %r3, 1234
-bne %r9, %r5, a
+#push %r9
+#pop %r8
+#jmp c
+#call a
+#beq %r1, %r1, b
+#bgt %r2, %r3, 1234
+#bne %r9, %r5, a
+
+#int
+#iret
+#ret
+
+csrwr %r1, %status
+csrrd %status, %r1
 
 .section data
 

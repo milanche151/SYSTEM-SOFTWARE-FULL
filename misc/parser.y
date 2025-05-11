@@ -89,14 +89,18 @@ directive:
 
 instruction:
   noop_opcode { instructionNoop(assembler, $1); }
+  | RET { instructionRet(assembler); }
+  | IRET { instructionIret(assembler); }
   | PUSH REG { instructionOnereg(assembler, INSTR_PUSH, $2); }
   | POP REG { instructionOnereg(assembler, INSTR_POP, $2); }
-  | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
-  | LD operand ',' REG { instructionLoadStore(assembler, INSTR_LD, $2,$4); }
-  | ST REG ',' operand { instructionLoadStore(assembler, INSTR_STR, $4, $2); }
   | CALL jmp_operand { instructionJump(assembler, INSTR_CALL, 0, 0, $2); }
   | JMP jmp_operand { instructionJump(assembler, INSTR_JMP, 0, 0, $2); }
   | jmp_opcode REG ',' REG ',' jmp_operand { instructionJump(assembler, $1, $2, $4, $6); }
+  | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
+  | LD operand ',' REG { instructionLoadStore(assembler, INSTR_LD, $2,$4); }
+  | ST REG ',' operand { instructionLoadStore(assembler, INSTR_STR, $4, $2); }
+  | CSRRD SREG ',' REG { instructionCSRReadWrite(assembler, INSTR_CSRRD, $2, $4); }
+  | CSRWR REG ',' SREG { instructionCSRReadWrite(assembler, INSTR_CSRWR, $4, $2); }
   ;
 
 operand:
@@ -117,6 +121,7 @@ jmp_operand :
 
 noop_opcode:
   HALT { $$ = INSTR_HALT; }
+  | INT { $$ = INSTR_INT; }
   ;
 
 tworeg_opcode:

@@ -4,8 +4,8 @@
 typedef enum {
   INSTR_HALT,
   INSTR_INT,
-  INSTR_IRET,
   INSTR_RET,
+  INSTR_IRET,
 
   INSTR_CALL,
   INSTR_JMP,
@@ -41,6 +41,7 @@ typedef enum {
 typedef enum {
   INSTR_FAMILY_ERROR, // this value should never be assigned
 
+  INSTR_FAMILY_SPECIAL,
   INSTR_FAMILY_NOOP,
   INSTR_FAMILY_ONEOP,
   INSTR_FAMILY_TWOREG_ONEOP,

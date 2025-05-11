@@ -57,7 +57,9 @@ VECTOR_DECLARE(VecRelocation, Relocation);
 
 typedef enum{
   BIND_TYPE_LOCAL,
-  BIND_TYPE_GLOBAL
+  BIND_TYPE_GLOBAL,
+
+  BIND_TYPE_COUNT,
 }symTableBind;
 
 typedef struct SymTableRow{
@@ -160,9 +162,12 @@ void externSym(struct Assembler* assembler, VecString symlist);
 
 //_________________________________________instructions____________________________________________________
 void instructionNoop(struct Assembler *assembler, InstrType instr_type);
+void instructionRet(struct Assembler *assembler);
+void instructionIret(struct Assembler *assembler);
 void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int reg);
 void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD);
 void instructionLoadStore(struct Assembler *assembler, InstrType instrType, Operand operand, int regD);
+void instructionCSRReadWrite(struct Assembler *assembler, InstrType instr_type, int regGPR, int regCSR);
 void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand);
 
 #endif
