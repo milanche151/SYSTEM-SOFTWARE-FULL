@@ -69,7 +69,8 @@ typedef struct SymTableRow{
  symTableType type;
  bool defined;
  symTableBind bind;
-} SymTableRow;
+} 
+SymTableRow;
 
 VECTOR_DECLARE(VecSymTbl,SymTableRow);
 
@@ -143,6 +144,7 @@ struct Assembler assemblerCreate(void);
 void assemblerDestroy(struct Assembler *assembler);
 void assemblerPrint(const struct Assembler* assembler);
 void AssemblerEndOfFile(struct Assembler *assembler);
+void assemblerPrintObjectFile(const struct Assembler *assembler,FILE* file);
 
 //_________________________________________misc_functions________________________________________________
 void insertSymSection(struct Assembler* assembler, char* name);

@@ -814,7 +814,7 @@ void assemblerPrint(const struct Assembler* assembler){
   for(size_t i = 0; i < assembler->sections.size; i++){
     const Section* section = &assembler->sections.data[i];
     printf("Section index = %lu\n", section->symtabIndex);
-    printf("Section size = %lu (+%lu bytes for literals)\n", section->machineCode.size, section->litPool.size * 4);
+    printf("Section size = %lu\n", section->machineCode.size);
 
     size_t n_print = 0;
 
@@ -824,6 +824,7 @@ void assemblerPrint(const struct Assembler* assembler){
       if(n_print % 8 == 0) printf("\n");
       else printf(" ");
     }
+    /*
     for(size_t j = 0; j < section->litPool.size; j++){
       printf("%02x %02x %02x %02x",
         (section->litPool.data[j].value >> 0) & 0xff,
@@ -834,7 +835,7 @@ void assemblerPrint(const struct Assembler* assembler){
       n_print += 4;
       if(n_print % 8 == 0) printf("\n");
       else printf(" ");
-    }
+    }*/
     printf("\n");
     printf("RELOCATIONS:\n");
     static const char* relocationTypePrint[RELOACTION_TYPE_COUNT] = {
@@ -927,9 +928,55 @@ void AssemblerEndOfFile(struct Assembler *assembler){
         assert(0);
         break;
       }
+      
+    }
 
+    for(size_t j = 0; j < currentSection->litPool.size; j++){
+      const LitPoolEntry *lit = &currentSection->litPool.data[j];
+      VecBytePush(&currentSection->machineCode, lit->value >>  0);
+      VecBytePush(&currentSection->machineCode, lit->value >>  8);
+      VecBytePush(&currentSection->machineCode, lit->value >> 16);
+      VecBytePush(&currentSection->machineCode, lit->value >> 24);
     }
     
   }
   
+}
+void assemblerPrintObjectFile(const struct Assembler *assembler,FILE* file){
+  fprintf(file,"%lu",assembler->symbolTable.size);
+  for(size_t i=0;i<assembler->symbolTable.size;i++){
+    const SymTableRow *curr_sym = &assembler->symbolTable.data[i];
+    fprintf(file,"\n%s %lu %u %u %u %u",curr_sym->name,
+                                       curr_sym->section,
+                                       curr_sym->value,
+                                       curr_sym->type,
+                                       curr_sym->defined,
+                                      curr_sym->bind);
+  }
+  fprintf(file,"\n%lu",assembler->sections.size);
+  for(size_t i=0;i<assembler->sections.size;i++){
+    const Section *current_section = &assembler->sections.data[i];
+    fprintf(file,"\n%lu ",current_section->symtabIndex);
+
+    fprintf(file, "\n%lu ", current_section->machineCode.size);
+
+    for(size_t j = 0; j < current_section->machineCode.size; j++){
+      if(j % 8 == 0) fprintf(file, "\n");
+      fprintf(file, "%02x ", current_section->machineCode.data[j]);
+    }
+
+    fprintf(file, "\n%lu", current_section->relocations.size);
+    for(size_t j = 0; j < current_section->relocations.size; j++){
+      const Relocation *current_reloc = &current_section->relocations.data[j];
+
+      fprintf(file, "\n%lu %u %lu %u",
+        current_reloc->offset,
+        current_reloc->type,
+        current_reloc->symbolIndex,
+        current_reloc->addend
+      );
+    }
+
+  }
+
 }
