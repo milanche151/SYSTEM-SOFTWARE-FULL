@@ -71,7 +71,12 @@ int main(int argc, const char **argv){
   yyparse();
   assemblerPrint(&a);
 
-  assemblerPrintObjectFile(&a, output_file);
+  if(a.correct){
+    assemblerPrintObjectFile(&a, output_file);
+  }
+  else {
+    printf("Assembler file contains semantic errors.\n");
+  }
 
   assemblerDestroy(&a);
 

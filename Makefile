@@ -11,8 +11,9 @@ default:
 		-g src/lex.yy.c \
 		-g src/assembler.c \
 		-g src/instr.c \
-		-g src/main.c \
+		-g src/asm_main.c \
 		-g src/util.c \
+		-g src/linker.c\
 		-lfl
 # compile :
 # 	gcc -c ./src/assembler.c -o  asembler

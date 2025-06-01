@@ -9,6 +9,7 @@
     "vector.h": "c",
     "string.h": "c",
     "parser.tab.h": "c",
-    "typeinfo": "c"
+    "typeinfo": "c",
+    "linker.h": "c"
   }
 }

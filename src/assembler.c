@@ -944,17 +944,19 @@ void AssemblerEndOfFile(struct Assembler *assembler){
 }
 void assemblerPrintObjectFile(const struct Assembler *assembler,FILE* file){
   fprintf(file,"%lu",assembler->symbolTable.size);
-  for(size_t i=0;i<assembler->symbolTable.size;i++){
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
     const SymTableRow *curr_sym = &assembler->symbolTable.data[i];
-    fprintf(file,"\n%s %lu %u %u %u %u",curr_sym->name,
-                                       curr_sym->section,
-                                       curr_sym->value,
-                                       curr_sym->type,
-                                       curr_sym->defined,
-                                      curr_sym->bind);
+    fprintf(file,"\n%s %lu %u %u %u %u",
+      curr_sym->name,
+      curr_sym->section,
+      curr_sym->value,
+      curr_sym->type,
+      curr_sym->defined,
+      curr_sym->bind
+    );
   }
   fprintf(file,"\n%lu",assembler->sections.size);
-  for(size_t i=0;i<assembler->sections.size;i++){
+    for(size_t i = 0; i < assembler->sections.size; i++){
     const Section *current_section = &assembler->sections.data[i];
     fprintf(file,"\n%lu ",current_section->symtabIndex);
 
