@@ -12,8 +12,6 @@ VECTOR_IMPLEMENT(VecExpr,Expression);
 VECTOR_IMPLEMENT(VecLine,Line);
 VECTOR_IMPLEMENT(VecByte, unsigned char);
 
-#define EXTERN_SECTION 0
-
 void insertSymSection(struct Assembler* assembler, char* name){
   SymTableRow* found = NULL;
   for(size_t i = 0; i < assembler->symbolTable.size; i++){

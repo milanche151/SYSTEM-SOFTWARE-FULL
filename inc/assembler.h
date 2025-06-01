@@ -140,6 +140,8 @@ struct Assembler {
 
 #include "parser.tab.h"
 
+#define EXTERN_SECTION 0
+
 struct Assembler assemblerCreate(void);
 void assemblerDestroy(struct Assembler *assembler);
 void assemblerPrint(const struct Assembler* assembler);

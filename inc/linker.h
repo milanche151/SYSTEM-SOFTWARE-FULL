@@ -3,6 +3,8 @@
 
 #include "assembler.h"
 
+
+
 typedef struct ObjSection {
   size_t symtab_index;
   
@@ -25,11 +27,20 @@ typedef struct ObjFile {
 
 } ObjFile;
 
+typedef struct GlobalSym{
+  size_t file_index;
+  size_t symtbl_index;
+}GlobalSym;
+
+VECTOR_DECLARE(VecGlobalSym, GlobalSym);
+
 typedef struct Linker{
   bool correct;
   
   size_t n_files;
   ObjFile *files;
+
+  VecGlobalSym globalSyms;
 } Linker;
 
 Linker LinkerCreate(FILE *input_files[], size_t n_input_files);
