@@ -53,7 +53,7 @@ static ObjFile parseObjFile(FILE *input_file){
       curr_section->bytes[j]=byte;
     }
 
-    objFile.correct = fscanf(input_file, "%lu", curr_section->n_relocs);
+    objFile.correct = fscanf(input_file, "%lu", &curr_section->n_relocs);
     if(!objFile.correct) return objFile;
 
     curr_section->relocs = myMalloc(sizeof(*curr_section->relocs) * curr_section->n_relocs);
@@ -78,7 +78,8 @@ bool LinkerAddGlobalSymbol(Linker *linker, size_t file_idx, size_t sym_idx){
   const SymTableRow *curr_sym = &linker->files[file_idx].symbols[sym_idx];
 
   for(size_t i = 0; i < linker->globalSyms.size; i++){
-    const SymTableRow *curr_global_sym = &linker->globalSyms.data[i];
+    GlobalSym global_id = linker->globalSyms.data[i];
+    SymTableRow *curr_global_sym = &linker->files[global_id.file_index].symbols[global_id.symtbl_index];
 
     if(strcmp(curr_global_sym->name, curr_sym->name) == 0){
       printf("Symbol %s defined multiple times.\n", curr_sym->name);
@@ -100,9 +101,9 @@ bool LinkerAddGlobalSymbol(Linker *linker, size_t file_idx, size_t sym_idx){
 bool LinkerFindExternSymbol(Linker *linker, const char *symbol_name){
   for(size_t i = 0; i < linker->globalSyms.size; i++){
     GlobalSym global_id = linker->globalSyms.data[i];
-    SymTableRow *curr_symbol = &linker->files[global_id.file_index].symbols[global_id.symtbl_index];
+    SymTableRow *curr_global_sym = &linker->files[global_id.file_index].symbols[global_id.symtbl_index];
 
-    if(strcmp(curr_symbol->name, symbol_name) == 0){
+    if(strcmp(curr_global_sym->name, symbol_name) == 0){
       return true;
     }
   }
@@ -122,7 +123,7 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files)
   for(size_t i = 0; i < linker.n_files; i++){
     linker.files[i] = parseObjFile(input_files[i]);
     if(!linker.files[i].correct){
-      printf("Linker input file %llu is NOT correct.\n" , i);
+      printf("Linker input file %lu is NOT correct.\n", i);
       linker.correct = false;
       break;
     }
