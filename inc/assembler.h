@@ -62,13 +62,16 @@ typedef enum{
   BIND_TYPE_COUNT,
 }symTableBind;
 
+typedef uint32_t CORE_ADDR;
+
 typedef struct SymTableRow{
  char* name;
  size_t section;
- uint32_t value;
+ CORE_ADDR value;
  symTableType type;
  bool defined;
  symTableBind bind;
+ SymTableRow* definition; //not used during assembly phase
 } 
 SymTableRow;
 
@@ -81,7 +84,7 @@ typedef enum ExprType{
 
 typedef struct Expression{
   ExpressionType type;
-  uint32_t val;
+  CORE_ADDR val;
   char* name;
 } Expression;
 

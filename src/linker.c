@@ -1,5 +1,7 @@
 #include "linker.h"
 
+#include <assert.h>
+
 #include "util.h"
 
 VECTOR_IMPLEMENT(VecGlobalSym,GlobalSym);
@@ -98,20 +100,181 @@ bool LinkerAddGlobalSymbol(Linker *linker, size_t file_idx, size_t sym_idx){
   return true;
 }
 
-bool LinkerFindExternSymbol(Linker *linker, const char *symbol_name){
+SymTableRow* LinkerFindExternSymbol(Linker *linker, const char *symbol_name){
   for(size_t i = 0; i < linker->globalSyms.size; i++){
     GlobalSym global_id = linker->globalSyms.data[i];
     SymTableRow *curr_global_sym = &linker->files[global_id.file_index].symbols[global_id.symtbl_index];
 
     if(strcmp(curr_global_sym->name, symbol_name) == 0){
-      return true;
+      return curr_global_sym;
     }
   }
 
-  return false;
+  return NULL;
 }
 
-Linker LinkerCreate(FILE *input_files[], size_t n_input_files)
+VECTOR_DECLARE(VecSectionPlace, SectionPlace);
+VECTOR_IMPLEMENT(VecSectionPlace, SectionPlace);
+
+VecSectionPlace
+LinkerCreateAllSectionPlaces(Linker *linker, SectionPlace *places, size_t n_places){
+
+  VecSectionPlace all_section_places = VecSectionPlaceCreate();
+
+  // add all explicit sections to the vector
+  for(size_t i = 0; i < n_places; i++){
+    const SectionPlace *curr_place_spec = &places[i];
+
+    VecSectionPlacePush(&all_section_places, (SectionPlace){
+      .section_name = curr_place_spec->section_name,
+      .start = curr_place_spec->start,
+      .end = curr_place_spec->start,
+    });
+  }
+
+  // add all implicit sections to the vector
+  for(size_t i = 0; i < linker->n_files; i++){
+    const ObjFile *curr_file = &linker->files[i];
+    for(size_t j = 0; j < curr_file->n_sections; j++){
+      const ObjSection *curr_section = &curr_file->sections[j];
+      const SymTableRow *curr_section_as_symbol = &curr_file->symbols[curr_section->symtab_index];
+
+      bool found = false;
+      for(size_t k = 0; k < all_section_places.size; k++){
+        if(strcmp(all_section_places.data[k].section_name, curr_section_as_symbol->name) == 0){
+          found = true;
+          break;
+        }
+      }
+
+      if(!found) VecSectionPlacePush(
+        &all_section_places,
+        (SectionPlace){
+          .section_name = curr_section_as_symbol->name,
+          .start = 0,
+          .end = 0,
+        }
+      );
+    }
+  }
+
+  // address for implicit sections to start
+  CORE_ADDR current_start = 0;
+
+  // set end for explicit sections
+  for(size_t sec_idx = 0; sec_idx < n_places; sec_idx++){
+
+    SectionPlace *curr_section_place = &all_section_places.data[sec_idx];
+
+    for(size_t i = 0; i < linker->n_files; i++){
+      const ObjFile *curr_file = &linker->files[i];
+      for(size_t j = 0; j < curr_file->n_sections; j++){
+        const ObjSection *curr_section = &curr_file->sections[j];
+        SymTableRow *curr_section_as_symbol = &curr_file->symbols[curr_section->symtab_index];
+
+        // check if curr section is named as current section place
+        if(strcmp(curr_section_place->section_name, curr_section_as_symbol->name) != 0) continue;
+
+        curr_section_as_symbol->value = curr_section_place->end;
+
+        curr_section_place->end += curr_section->n_bytes;
+      }
+    }
+
+    // update current start based on this section's end address
+    if(curr_section_place->end > current_start) current_start = curr_section_place->end;
+  }
+
+  // set start and end for implicit sections
+  for(size_t sec_idx = n_places; sec_idx < all_section_places.size; sec_idx++){
+
+    SectionPlace *curr_section_place = &all_section_places.data[sec_idx];
+
+    // set start address
+    curr_section_place->start = current_start;
+    curr_section_place->end = current_start;
+
+    for(size_t i = 0; i < linker->n_files; i++){
+      const ObjFile *curr_file = &linker->files[i];
+      for(size_t j = 0; j < curr_file->n_sections; j++){
+        const ObjSection *curr_section = &curr_file->sections[j];
+        SymTableRow *curr_section_as_symbol = &curr_file->symbols[curr_section->symtab_index];
+
+        // check if curr section is named as current section place
+        if(strcmp(curr_section_place->section_name, curr_section_as_symbol->name) != 0) continue;
+
+        curr_section_as_symbol->value = curr_section_place->end;
+      
+        curr_section_place->end += curr_section->n_bytes;
+      }
+    }
+
+    // update current start based on this section's end address
+    if(curr_section_place->end > current_start) current_start = curr_section_place->end;
+  }
+
+  return all_section_places;
+
+}
+
+void LinkerCalculateAbsoluteValues(Linker *linker){
+  for(size_t i = 0; i < linker->n_files; i++){
+    ObjFile *curr_file = &linker->files[i];
+    for(size_t j = 0; j < curr_file->n_syms; j++){
+      SymTableRow *curr_symbol = &curr_file->symbols[j];
+
+      if(curr_symbol->section != EXTERN_SECTION){
+        SymTableRow *section_as_symbol = &curr_file->symbols[curr_symbol->section];
+        curr_symbol->value += section_as_symbol->value;
+      }
+    }
+  }
+}
+
+void LinkerHandleRelocations(Linker *linker){
+  for(size_t i = 0; i < linker->n_files; i++){
+    ObjFile *curr_file = &linker->files[i];
+    
+    for(size_t j = 0; j < curr_file->n_sections; j++){
+      ObjSection *curr_section = &curr_file->sections[j];
+
+      for(size_t k = 0; k < curr_section->n_relocs; k++){
+        Relocation *curr_reloc = &curr_section->relocs[k];
+
+        if(curr_reloc->offset + 4 > curr_section->n_bytes){
+          printf("Linker relocation entry offset %lu is exceeding section size.\n", curr_reloc->offset);
+          linker->correct = false;
+        }
+
+        if(curr_reloc->symbolIndex == 0 || curr_reloc->symbolIndex >= curr_file->n_syms){
+          printf("Linker relocation entry symbol %llu is exceeding symbol table size.\n", curr_reloc->symbolIndex);
+          linker->correct = false;
+        }
+
+        switch(curr_reloc->type){
+        case RELOCATION_TYPE_DATA32:
+
+          // patch the value, little-endian
+          const SymTableRow *symbol = &curr_file->symbols[curr_reloc->symbolIndex];
+          if(symbol->section == EXTERN_SECTION) symbol = symbol->definition;
+
+          uint32_t value = symbol->value + curr_reloc->addend;
+
+          unsigned char *patch_bytes = curr_section->bytes + curr_reloc->offset;
+          patch_bytes[0] = value >>  0;
+          patch_bytes[1] = value >>  8;
+          patch_bytes[2] = value >> 16;
+          patch_bytes[3] = value >> 24;
+
+          break;
+        default: assert(0);
+        }
+      }
+    }
+  }
+}
+
+Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* places, size_t n_places)
 {
   Linker linker = {
     .correct = true,
@@ -150,13 +313,73 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files)
     for(size_t j = 0; j < linker.files[i].n_syms; j++){
       SymTableRow *curr_sym = &linker.files[i].symbols[j];
       if(curr_sym->bind == BIND_TYPE_GLOBAL && curr_sym->section == EXTERN_SECTION){
-        if(!LinkerFindExternSymbol(&linker, curr_sym->name)){
+        SymTableRow* definition =LinkerFindExternSymbol(&linker, curr_sym->name);
+        if(definition == NULL){
           printf("Extern symbol %s is not defined.\n", curr_sym->name);
           linker.correct = false;
+        }
+        else{
+          curr_sym->definition = definition;
         }
       }
     }
   }
   
   if(!linker.correct) return linker;
+
+  // check if all specified section places have unique names
+  for(size_t i = 0; i < n_places; i++){
+    assert(places[i].section_name != NULL);
+    for(size_t j = i + 1; j < n_places; j++){
+      assert(places[j].section_name != NULL);
+
+      if(strcmp(places[i].section_name, places[j].section_name) == 0){
+        printf("Linker section place %s specified multiple times.\n", places[i].section_name);
+        linker.correct = false;
+      }
+    }
+  }
+  if(!linker.correct) return linker;
+
+  // place all sections to absolute addresses
+  VecSectionPlace all_section_places = LinkerCreateAllSectionPlaces(&linker, places, n_places);
+
+  //check for overlaps between sections
+
+  for(size_t i = 0 ; i < all_section_places.size; i++){
+    SectionPlace *curr_place = &all_section_places.data[i];
+    for (size_t j = i+1; j < all_section_places.size; j++){
+      SectionPlace *other_place  = &all_section_places.data[j];
+      if(
+        ((curr_place->start < other_place->start) && (other_place->start < curr_place->end))
+        ||
+        ((other_place->start < curr_place->start) && (curr_place->start < other_place->end))
+      ){
+        printf("Sections %s and %s overlap.\n", curr_place->section_name, other_place->section_name);
+        linker.correct = false;
+      }
+
+      
+    }
+    
+  }
+  if(!linker.correct) {
+    VecSectionDestroy(&all_section_places);
+    return linker;
+  }
+
+  LinkerCalculateAbsoluteValues(&linker);
+  LinkerHandleRelocations(&linker);
+
+  if(!linker.correct) {
+    VecSectionDestroy(&all_section_places);
+    return linker;
+  }
+
+  VecSectionDestroy(&all_section_places);
+
+  return linker;
+}
+void LinkerPrintHexFile(const Linker *linker, FILE *output_file){
+  
 }

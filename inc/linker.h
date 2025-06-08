@@ -43,7 +43,13 @@ typedef struct Linker{
   VecGlobalSym globalSyms;
 } Linker;
 
-Linker LinkerCreate(FILE *input_files[], size_t n_input_files);
+typedef struct SectionPlace{
+  CORE_ADDR start;
+  CORE_ADDR end;
+  const char* section_name;
+}SectionPlace;
+
+Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* places, size_t n_places);
 void LinkerDestroy(Linker *linker);
 void LinkerPrint(const Linker *linker);
 void LinkerPrintHexFile(const Linker *linker, FILE *output_file);
