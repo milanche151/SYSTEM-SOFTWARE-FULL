@@ -247,7 +247,7 @@ void LinkerHandleRelocations(Linker *linker){
         }
 
         if(curr_reloc->symbolIndex == 0 || curr_reloc->symbolIndex >= curr_file->n_syms){
-          printf("Linker relocation entry symbol %llu is exceeding symbol table size.\n", curr_reloc->symbolIndex);
+          printf("Linker relocation entry symbol %lu is exceeding symbol table size.\n", curr_reloc->symbolIndex);
           linker->correct = false;
         }
 
@@ -364,7 +364,7 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
     
   }
   if(!linker.correct) {
-    VecSectionDestroy(&all_section_places);
+    VecSectionPlaceDestroy(&all_section_places);
     return linker;
   }
 
@@ -372,11 +372,11 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
   LinkerHandleRelocations(&linker);
 
   if(!linker.correct) {
-    VecSectionDestroy(&all_section_places);
+    VecSectionPlaceDestroy(&all_section_places);
     return linker;
   }
 
-  VecSectionDestroy(&all_section_places);
+  VecSectionPlaceDestroy(&all_section_places);
 
   return linker;
 }

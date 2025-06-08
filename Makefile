@@ -13,7 +13,12 @@ default:
 		-g src/instr.c \
 		-g src/asm_main.c \
 		-g src/util.c \
-		-g src/linker.c\
+		-lfl
+	gcc -o build/linker \
+		-I inc \
+		-g src/linker.c \
+		-g src/ld_main.c \
+		-g src/util.c \
 		-lfl
 # compile :
 # 	gcc -c ./src/assembler.c -o  asembler

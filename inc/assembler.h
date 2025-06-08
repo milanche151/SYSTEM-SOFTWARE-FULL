@@ -65,13 +65,13 @@ typedef enum{
 typedef uint32_t CORE_ADDR;
 
 typedef struct SymTableRow{
- char* name;
- size_t section;
- CORE_ADDR value;
- symTableType type;
- bool defined;
- symTableBind bind;
- SymTableRow* definition; //not used during assembly phase
+  char* name;
+  size_t section;
+  CORE_ADDR value;
+  symTableType type;
+  bool defined;
+  symTableBind bind;
+  struct SymTableRow* definition; //not used during assembly phase
 } 
 SymTableRow;
 
