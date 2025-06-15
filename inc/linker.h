@@ -35,7 +35,7 @@ typedef struct GlobalSym{
 typedef struct SectionPlace{
   CORE_ADDR start;
   CORE_ADDR end;
-  const char* section_name;
+  char* section_name;
 }SectionPlace;
 
 VECTOR_DECLARE(VecGlobalSym, GlobalSym);
