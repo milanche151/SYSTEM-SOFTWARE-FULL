@@ -17,7 +17,7 @@ int main(int argc, char** argv){
   }
 
   SectionPlace section_places[2] = {
-    [0] = { .start = 0x4000, .section_name = "text", },
+    [0] = { .start = 0x4004, .section_name = "text", },
     [1] = { .start = 0x1000, .section_name = "data", },
   };  
 

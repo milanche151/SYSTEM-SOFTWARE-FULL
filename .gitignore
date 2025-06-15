@@ -4,3 +4,4 @@
 *.yy.c
 *.output
 *.o
+*.hex

@@ -460,15 +460,17 @@ void LinkerPrintHexFile(const Linker *linker, FILE *output_file){
     
     // first address of the next section
     size_t currAddr = curr_section_as_symbol->value;
-    size_t lastAddrLineLimit = (lastAddr + HEX_FILE_PADDING - 1) / HEX_FILE_PADDING * HEX_FILE_PADDING;
+    size_t lastAddrLineEnd = (lastAddr + HEX_FILE_PADDING - 1) / HEX_FILE_PADDING * HEX_FILE_PADDING;
     size_t currAddrLineStart = currAddr / HEX_FILE_PADDING * HEX_FILE_PADDING;
 
+    size_t lastLineLimit = currAddr < lastAddrLineEnd ? currAddr : lastAddrLineEnd;
+
     // fill end of lastAddr's line with 0s
-    for(size_t j = lastAddr; j < (currAddr < lastAddrLineLimit ? currAddr : lastAddrLineLimit); j++){
+    for(size_t j = lastAddr; j < lastLineLimit; j++){
       PrintHexByte(output_file, j, 0x00);
     }
     // fill beginning of currAddr's line with 0s
-    for(size_t j = (currAddrLineStart > lastAddr ? currAddrLineStart : lastAddr); j < currAddr; j++){
+    for(size_t j = (currAddrLineStart > lastLineLimit ? currAddrLineStart : lastLineLimit); j < currAddr; j++){
       PrintHexByte(output_file, j, 0x00);
     }
 
@@ -477,6 +479,14 @@ void LinkerPrintHexFile(const Linker *linker, FILE *output_file){
     }
 
     lastAddr = curr_section_as_symbol->value + curr_section->n_bytes;
+  }
+
+  {
+    // fill end of lastAddr's line with 0s
+    size_t lastAddrLineEnd = (lastAddr + HEX_FILE_PADDING - 1) / HEX_FILE_PADDING * HEX_FILE_PADDING;
+    for(size_t j = lastAddr; j < lastAddrLineEnd; j++){
+      PrintHexByte(output_file, j, 0x00);
+    }
   }
 
 }
