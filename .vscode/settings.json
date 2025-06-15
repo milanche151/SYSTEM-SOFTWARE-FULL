@@ -10,6 +10,7 @@
     "string.h": "c",
     "parser.tab.h": "c",
     "typeinfo": "c",
-    "linker.h": "c"
+    "linker.h": "c",
+    "util.h": "c"
   }
 }

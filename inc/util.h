@@ -9,7 +9,7 @@ void* myMalloc(size_t size);
 void* myRealloc(void* ptr,size_t size);
 void myFree(void* ptr);
 
-
+#define arrlen(a) ((sizeof(a)) / sizeof(*(a)))
 
 
 #endif

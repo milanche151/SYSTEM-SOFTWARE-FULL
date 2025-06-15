@@ -5,6 +5,7 @@
 #include "util.h"
 
 VECTOR_IMPLEMENT(VecGlobalSym,GlobalSym);
+VECTOR_IMPLEMENT(VecSectionPlace, SectionPlace);
 
 static ObjFile parseObjFile(FILE *input_file){
   ObjFile objFile = { .correct = true };
@@ -113,9 +114,6 @@ SymTableRow* LinkerFindExternSymbol(Linker *linker, const char *symbol_name){
   return NULL;
 }
 
-VECTOR_DECLARE(VecSectionPlace, SectionPlace);
-VECTOR_IMPLEMENT(VecSectionPlace, SectionPlace);
-
 VecSectionPlace
 LinkerCreateAllSectionPlaces(Linker *linker, SectionPlace *places, size_t n_places){
 
@@ -178,11 +176,12 @@ LinkerCreateAllSectionPlaces(Linker *linker, SectionPlace *places, size_t n_plac
         curr_section_as_symbol->value = curr_section_place->end;
 
         curr_section_place->end += curr_section->n_bytes;
+
+        // update current start based on this section's end address
+        if(curr_section_place->end > current_start) current_start = curr_section_place->end;
       }
     }
 
-    // update current start based on this section's end address
-    if(curr_section_place->end > current_start) current_start = curr_section_place->end;
   }
 
   // set start and end for implicit sections
@@ -223,7 +222,7 @@ void LinkerCalculateAbsoluteValues(Linker *linker){
     for(size_t j = 0; j < curr_file->n_syms; j++){
       SymTableRow *curr_symbol = &curr_file->symbols[j];
 
-      if(curr_symbol->section != EXTERN_SECTION){
+      if(curr_symbol->section != EXTERN_SECTION && curr_symbol->type != SYM_TBL_TYPE_SECTION){
         SymTableRow *section_as_symbol = &curr_file->symbols[curr_symbol->section];
         curr_symbol->value += section_as_symbol->value;
       }
@@ -281,6 +280,7 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
     .n_files = n_input_files,
     .files = myMalloc(sizeof(*linker.files) * n_input_files),
     .globalSyms = VecGlobalSymCreate(),
+    .all_section_places = VecSectionPlaceCreate(),
   };
 
   for(size_t i = 0; i < linker.n_files; i++){
@@ -312,7 +312,9 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
   for(size_t i = 0; i < linker.n_files; i++){
     for(size_t j = 0; j < linker.files[i].n_syms; j++){
       SymTableRow *curr_sym = &linker.files[i].symbols[j];
-      if(curr_sym->bind == BIND_TYPE_GLOBAL && curr_sym->section == EXTERN_SECTION){
+
+      // don't check for *UNDEF* symbol (its index is EXTERN SECTIONS)
+      if(j != EXTERN_SECTION && curr_sym->section == EXTERN_SECTION){
         SymTableRow* definition =LinkerFindExternSymbol(&linker, curr_sym->name);
         if(definition == NULL){
           printf("Extern symbol %s is not defined.\n", curr_sym->name);
@@ -341,15 +343,18 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
   }
   if(!linker.correct) return linker;
 
+  // destroy old section places vector
+  VecSectionPlaceDestroy(&linker.all_section_places);
+
   // place all sections to absolute addresses
-  VecSectionPlace all_section_places = LinkerCreateAllSectionPlaces(&linker, places, n_places);
+  linker.all_section_places = LinkerCreateAllSectionPlaces(&linker, places, n_places);
 
   //check for overlaps between sections
 
-  for(size_t i = 0 ; i < all_section_places.size; i++){
-    SectionPlace *curr_place = &all_section_places.data[i];
-    for (size_t j = i+1; j < all_section_places.size; j++){
-      SectionPlace *other_place  = &all_section_places.data[j];
+  for(size_t i = 0 ; i < linker.all_section_places.size; i++){
+    SectionPlace *curr_place = &linker.all_section_places.data[i];
+    for (size_t j = i+1; j < linker.all_section_places.size; j++){
+      SectionPlace *other_place  = &linker.all_section_places.data[j];
       if(
         ((curr_place->start < other_place->start) && (other_place->start < curr_place->end))
         ||
@@ -363,23 +368,115 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
     }
     
   }
-  if(!linker.correct) {
-    VecSectionPlaceDestroy(&all_section_places);
-    return linker;
-  }
+  if(!linker.correct) return linker;
 
   LinkerCalculateAbsoluteValues(&linker);
   LinkerHandleRelocations(&linker);
 
-  if(!linker.correct) {
-    VecSectionPlaceDestroy(&all_section_places);
-    return linker;
-  }
-
-  VecSectionPlaceDestroy(&all_section_places);
+  if(!linker.correct) return linker;
 
   return linker;
 }
+
+void LinkerDestroy(Linker *linker){
+  VecSectionPlaceDestroy(&linker->all_section_places);
+  VecGlobalSymDestroy(&linker->globalSyms);
+
+  for(size_t i = 0; i < linker->n_files; i++){
+    ObjFile *file = &linker->files[i];
+    myFree(file->symbols);
+    for(size_t j = 0; j < file->n_sections; j++){
+      ObjSection *section = &file->sections[j];
+      myFree(section->bytes);
+      myFree(section->relocs);
+    }
+    myFree(file->sections);
+  }
+  myFree(linker->files);
+}
+
+typedef struct SectionSymTab{
+  ObjSection* section;
+  SymTableRow* symTab;
+}SectionSymTab;
+
+static int section_compare(const void *b1, const void *b2){
+  const SectionSymTab *sect1 = b1;
+  const SectionSymTab *sect2 = b2;
+
+  return sect1->symTab[sect1->section->symtab_index].value
+    > sect2->symTab[sect2->section->symtab_index].value
+      ? +1
+      : -1;
+
+}
+
+#define HEX_FILE_PADDING 8
+
+static inline void PrintHexByte(FILE *output_file, size_t addr, unsigned char byte){
+  if(addr % HEX_FILE_PADDING == 0) fprintf(output_file, "\n%04x: ", (unsigned)addr);
+  fprintf(output_file, "%02x ", byte);
+}
+
 void LinkerPrintHexFile(const Linker *linker, FILE *output_file){
   
+  size_t num_section = 0;
+  for (size_t i = 0; i < linker->n_files; i++){
+    const ObjFile* curr_file = &linker->files[i];
+    num_section += curr_file->n_sections;
+  }
+
+  SectionSymTab* all_sections = myMalloc(num_section * sizeof(*all_sections));
+  num_section = 0;
+  for (size_t i = 0; i < linker->n_files; i++){
+    const ObjFile* curr_file = &linker->files[i];
+    for (size_t j = 0; j < curr_file->n_sections; j++){
+      all_sections[num_section++] = (SectionSymTab){
+        .section = &curr_file->sections[j],
+        .symTab = curr_file->symbols
+      };
+    }  
+  }
+  
+  qsort(all_sections, num_section, sizeof(*all_sections), section_compare);
+  for(size_t i = 0; i < num_section; i++){
+    SectionSymTab *curr_section_symtab = &all_sections[i];
+    ObjSection *curr_section = curr_section_symtab->section;
+    SymTableRow *curr_section_as_symbol = &curr_section_symtab->symTab[curr_section->symtab_index];
+
+    printf("Section %s, start = %04x, end = %04x\n",
+      curr_section_as_symbol->name,
+      (CORE_ADDR)(curr_section_as_symbol->value),
+      (CORE_ADDR)(curr_section_as_symbol->value + curr_section->n_bytes)
+    );
+  }
+
+  // last address we have written to
+  size_t lastAddr = 0;
+  for(size_t i = 0; i < num_section; i++){
+    SectionSymTab *curr_section_symtab = &all_sections[i];
+    ObjSection *curr_section = curr_section_symtab->section;
+    SymTableRow *curr_section_as_symbol = &curr_section_symtab->symTab[curr_section->symtab_index];
+    
+    // first address of the next section
+    size_t currAddr = curr_section_as_symbol->value;
+    size_t lastAddrLineLimit = (lastAddr + HEX_FILE_PADDING - 1) / HEX_FILE_PADDING * HEX_FILE_PADDING;
+    size_t currAddrLineStart = currAddr / HEX_FILE_PADDING * HEX_FILE_PADDING;
+
+    // fill end of lastAddr's line with 0s
+    for(size_t j = lastAddr; j < (currAddr < lastAddrLineLimit ? currAddr : lastAddrLineLimit); j++){
+      PrintHexByte(output_file, j, 0x00);
+    }
+    // fill beginning of currAddr's line with 0s
+    for(size_t j = (currAddrLineStart > lastAddr ? currAddrLineStart : lastAddr); j < currAddr; j++){
+      PrintHexByte(output_file, j, 0x00);
+    }
+
+    for(size_t j = 0; j < curr_section->n_bytes; j++){
+      PrintHexByte(output_file, curr_section_as_symbol->value + j, curr_section->bytes[j]);
+    }
+
+    lastAddr = curr_section_as_symbol->value + curr_section->n_bytes;
+  }
+
 }
