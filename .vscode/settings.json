@@ -11,6 +11,7 @@
     "parser.tab.h": "c",
     "typeinfo": "c",
     "linker.h": "c",
-    "util.h": "c"
+    "util.h": "c",
+    "stdint.h": "c"
   }
 }

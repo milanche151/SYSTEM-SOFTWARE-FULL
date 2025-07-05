@@ -1,5 +1,6 @@
 default:
 	clear
+	mkdir -p build
 	flex --outfile=src/lex.yy.c \
 		-l "misc/lexer.l" 
 	bison --defines=inc/parser.tab.h \
@@ -20,7 +21,8 @@ default:
 		-g src/ld_main.c \
 		-g src/util.c \
 		-lfl
-# compile :
-# 	gcc -c ./src/assembler.c -o  asembler
-# 	gcc -c test3.c -o  test3
-# 	gcc test3 asembler -o result
+	gcc -o build/emulator \
+		-I inc \
+		-g src/emu_main.c \
+		-g src/emulator.c \
+		-g src/util.c

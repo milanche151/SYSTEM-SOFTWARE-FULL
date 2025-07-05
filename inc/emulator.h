@@ -2,13 +2,15 @@
 #define _EMULATOR_H_
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 typedef unsigned char Byte;
 
 typedef struct Processor{
-    Byte a, sp, x , pc, ir;
-    bool z , p, c;
+    uint32_t reg[16];
+    bool z, p, c;
 } Processor;
 typedef enum {
     EMU_STATUS_RUNNING,
@@ -92,14 +94,24 @@ typedef enum {
     LOAD_CSR_MEM_POST = 0x7    // csr[A]<=mem32[gpr[B]]; gpr[B]<=gpr[B]+D;
 } LoadModifier;
 
+#define FRAME_SIZE 0x1000
+#define PMT1_SIZE 0x100
+#define PMT2_SIZE 0x100
+
+typedef char MemFrame [FRAME_SIZE];
+typedef MemFrame* pmt1[PMT1_SIZE];
+typedef pmt1* pmt2[PMT2_SIZE];
+
 typedef struct Emulator{
     Processor cpu;
-    Byte mem[4294967296];
+    pmt2 mem;
     Status status;
 }Emulator;
 
-Emulator* emulatorCreate();
+Emulator emulatorCreate();
+void emulatorDestroy(Emulator *emu);
 void emulatorLoad(Emulator* emulator, FILE* inputFile);
+void emulatorMemoryTest(Emulator *emulator);
 
 // Pomoćne funkcije za dekodiranje instrukcija
 InstructionOpcode getInstructionOpcode(Byte instruction);
