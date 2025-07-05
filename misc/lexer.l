@@ -56,6 +56,8 @@ csrwr {return CSRWR;}
 \"[a-zA-Z_0-9]*\" { yylval.string=strdup(yytext); return STRING; }
 "$" {return '$';}
 [0][x][A-Fa-f0-9]+ {sscanf(yytext,"%x",&yylval.number);return NUM;}
+"%sp" { yylval.number=14; return REG; }
+"%pc" { yylval.number=15; return REG; }
 %r(0|1|2|3|4|5|6|7|8|9|"10"|"11"|"12"|"13"|"14"|"15") {yylval.number=atoi(yytext+2);return REG;}
 "[" {return '[';}
 "]" {return ']';}
