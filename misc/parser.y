@@ -93,6 +93,7 @@ instruction:
   | IRET { instructionIret(assembler); }
   | PUSH REG { instructionOnereg(assembler, INSTR_PUSH, $2); }
   | POP REG { instructionOnereg(assembler, INSTR_POP, $2); }
+  | NOT REG { instructionOnereg(assembler, INSTR_NOT, $2); }
   | CALL jmp_operand { instructionJump(assembler, INSTR_CALL, 0, 0, $2); }
   | JMP jmp_operand { instructionJump(assembler, INSTR_JMP, 0, 0, $2); }
   | jmp_opcode REG ',' REG ',' jmp_operand { instructionJump(assembler, $1, $2, $4, $6); }
@@ -126,6 +127,14 @@ noop_opcode:
 
 tworeg_opcode:
   ADD { $$ = INSTR_ADD; }
+  | SUB { $$ = INSTR_SUB; }
+  | MUL { $$ = INSTR_MUL; }
+  | DIV { $$ = INSTR_DIV; }
+  | SHL { $$ = INSTR_SHL; }
+  | SHR { $$ = INSTR_SHR; }
+  | AND { $$ = INSTR_AND; }
+  | XOR { $$ = INSTR_XOR; }
+  | OR { $$ = INSTR_OR; }
   ;
 
 jmp_opcode:
