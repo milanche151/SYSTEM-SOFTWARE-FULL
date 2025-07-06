@@ -517,16 +517,18 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
     if(instrType == INSTR_LD){
       switch(operand.type){
       case OPERAND_TYPE_IMMED_LIT:
-        insertGenericInstruction(assembler, desc->opcode, 0x01, regD, REGISTER_ZERO, 0, 0);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_IMMED_SYM:
-        insertGenericInstruction(assembler, desc->opcode, 0x01, regD, REGISTER_ZERO, 0, 0);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_MEMDIR_LIT:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_ZERO, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, regD, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_MEMDIR_SYM: 
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_ZERO, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, regD, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGDIR:
         insertGenericInstruction(assembler, desc->opcode, 0x01, regD, operand.reg, REGISTER_ZERO, 0);
@@ -650,7 +652,7 @@ void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1,
     }
 
     //insert code
-    insertGenericInstruction(assembler, desc->opcode, desc->modifier, REGISTER_ZERO, reg1, reg2, 0);
+    insertGenericInstruction(assembler, desc->opcode, desc->modifier, REGISTER_PC, reg1, reg2, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,

@@ -146,6 +146,8 @@ void emulatorRun(Emulator* emu){
     uint32_t c      = (instr << 16) >> 28;
     uint32_t d      = (instr << 20) >> 20;
 
+    ADVANCE_PC();
+
     assert(opcode < 0x10 && mod < 0x10 && a < 0x10 && b < 0x10 && c < 0x10 && d < 0x1000);
     switch ((InstructionOpcode)opcode)
     {
@@ -186,15 +188,12 @@ void emulatorRun(Emulator* emu){
         break;
       case JMP_EQ:
         if(REG(b)== REG(c)) REG(REG_PC) = REG(a)+d;
-        else ADVANCE_PC();
         break;
       case JMP_NE:
         if(REG(b)!= REG(c)) REG(REG_PC) = REG(a)+d;
-        else ADVANCE_PC();
         break;
       case JMP_GT:
         if((int32_t)REG(b) > (int32_t)REG(c)) REG(REG_PC) = REG(a)+d;
-        else ADVANCE_PC();
         break;
       case JMP_MEM_UNCONDITIONAL:
         REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
@@ -205,21 +204,18 @@ void emulatorRun(Emulator* emu){
           REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
         }
-        else ADVANCE_PC();
         break;
       case JMP_MEM_NE:
         if(REG(b)!= REG(c)){
           REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
         }
-        else ADVANCE_PC();
         break;
       case JMP_MEM_GT:
         if((int32_t)REG(b) > (int32_t)REG(c)){
           REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        } 
-        else ADVANCE_PC();
+        }
         break;
       default:
         emu->status = EMU_STATUS_BAD_MOD;
@@ -231,7 +227,6 @@ void emulatorRun(Emulator* emu){
       REG(b) = REG(c)^REG(b);
       REG(c) = REG(c)^REG(b);
       REG(b) = REG(c)^REG(b);
-      ADVANCE_PC();
     } break;
 
     case INSTR_ARITH:{
@@ -239,20 +234,16 @@ void emulatorRun(Emulator* emu){
       {
       case ARITH_ADD:
         REG(a) = REG(b) + REG(c);
-        ADVANCE_PC();
         break;
       case ARITH_SUB:
         REG(a) = REG(b) - REG(c);
-        ADVANCE_PC();
         break;
       case ARITH_MUL:
         REG(a) = REG(b) * REG(c);
-        ADVANCE_PC();
         break;
       case ARITH_DIV:
         if(REG(c) == 0) emu->status = EMU_STATUS_DIV_BY_ZERO;
         else REG(a) = REG(b) / REG(c);
-        ADVANCE_PC();
         break;
       
       default:
@@ -266,19 +257,15 @@ void emulatorRun(Emulator* emu){
       {
       case LOGIC_NOT:
         REG(a) = ~REG(b);
-        ADVANCE_PC();
         break;
       case LOGIC_AND:
         REG(a) = REG(b) & REG(c);
-        ADVANCE_PC();
         break;
       case LOGIC_OR:
         REG(a) = REG(b) | REG(c);
-        ADVANCE_PC();
         break;
       case LOGIC_XOR:
         REG(a) = REG(b) ^ REG(c);
-        ADVANCE_PC();
         break;
       default:
         emu->status = EMU_STATUS_BAD_MOD;
@@ -291,11 +278,9 @@ void emulatorRun(Emulator* emu){
       {
       case SHIFT_LEFT:
         REG(a) = REG(b) << REG(c);
-        ADVANCE_PC();
         break;
       case SHIFT_RIGHT:
         REG(a) = REG(b) >> REG(c);
-        ADVANCE_PC();
         break;
       default:
         emu->status = EMU_STATUS_BAD_MOD;
@@ -309,17 +294,14 @@ void emulatorRun(Emulator* emu){
       case STORE_REG_INDIRECT:
         memoryWriteWord(emu,REG(a)+REG(b)+d,REG(c),&isAligned);
         if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        ADVANCE_PC();
         break;
       case STORE_REG_INDIRECT_PREINC:
         memoryWriteWord(emu,(REG(a)+=(REG(b)+d)),REG(c),&isAligned);
         if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        ADVANCE_PC();
         break;
       case STORE_MEM_INDIRECT:
         memoryWriteWord(emu,memoryReadWord(emu,REG(a)+REG(b)+d,&isAligned),REG(c),&isAligned);
         if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        ADVANCE_PC();
         break;
       default:
         emu->status = EMU_STATUS_BAD_MOD;
@@ -334,32 +316,26 @@ void emulatorRun(Emulator* emu){
       case LOAD_CSR:
         if(b < CSR_COUNT) REG(a) = CSR(b);
         else emu->status = EMU_STATUS_BUS_ERROR;
-        ADVANCE_PC();
         break;
       case LOAD_REG_DISP:
         REG(a) = REG(b) + d;
-        ADVANCE_PC();
         break;
       case LOAD_MEM_INDIRECT:
         REG(a) = memoryReadWord(emu,REG(b) + REG(c) + d,&isAligned);
         if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        ADVANCE_PC();
         break;
       case LOAD_MEM_INDIRECT_POSTINC:
         REG(a) = memoryReadWord(emu,REG(b),&isAligned);
         if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
         REG(b) += d;
-        ADVANCE_PC();
         break;
       case LOAD_CSR_FROM_REG:
         if(a < CSR_COUNT) CSR(a) = REG(b);
         else emu->status = EMU_STATUS_BUS_ERROR;
-        ADVANCE_PC();
         break;
       case LOAD_CSR_OR_DISP:
         if(a < CSR_COUNT && b < CSR_COUNT) CSR(a) = CSR(b)|d;
         else emu->status = EMU_STATUS_BUS_ERROR;
-        ADVANCE_PC();
         break;
       case LOAD_CSR_MEM_INDIRECT:
         if(a < CSR_COUNT){        
@@ -367,7 +343,6 @@ void emulatorRun(Emulator* emu){
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
         }
         else emu->status = EMU_STATUS_BUS_ERROR;
-        ADVANCE_PC();
         break;
       case LOAD_CSR_MEM_POSTINC:
         if(a < CSR_COUNT){        
@@ -376,7 +351,6 @@ void emulatorRun(Emulator* emu){
           REG(b)+=d;
         }
         else emu->status = EMU_STATUS_BUS_ERROR;
-        ADVANCE_PC();
         break;
 
       default:
@@ -393,10 +367,21 @@ void emulatorRun(Emulator* emu){
 
 
     #if 1
-
-    printf("Instruction %#04x executed.\n", opcode);
+    static const char* instructionOpcodePrint[INSTR_COUNT] = {
+      [INSTR_HALT] = "INSTR_HALT",
+      [INSTR_INT] = "INSTR_INT",
+      [INSTR_CALL] = "INSTR_CALL",
+      [INSTR_JMP] = "INSTR_JMP",
+      [INSTR_XCHG] = "INSTR_XCHG",
+      [INSTR_ARITH] = "INSTR_ARITH",
+      [INSTR_LOGIC] = "INSTR_LOGIC",
+      [INSTR_SHIFT] = "INSTR_SHIFT",
+      [INSTR_STORE] = "INSTR_STORE",
+      [INSTR_LOAD] =  "INSTR_LOAD",      
+    };
+    printf("Instruction %s executed.\n", instructionOpcodePrint[opcode]);
     for(size_t i = 0; i < 16; i++){
-      printf("r%lu = %04x ", i, REG(i));
+      printf("r%-2lu = %08x ", i, REG(i));
       if(i % 8 == 8 - 1) printf("\n");
     }
 
@@ -430,7 +415,7 @@ void emulatorRun(Emulator* emu){
   }
   printf("Processor registers:\n");
   for (size_t i = 0; i < 16; i++){
-    printf("r%lu = %04x\n",i,emu->cpu.reg[i]);
+    printf("r%-2lu = %04x\n",i,emu->cpu.reg[i]);
   }
 }
 

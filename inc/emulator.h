@@ -34,7 +34,8 @@ typedef enum {
     INSTR_LOGIC = 0x6,       // 0110 MMMM  
     INSTR_SHIFT = 0x7,       // 0111 MMMM  
     INSTR_STORE = 0x8,       // 1000 MMMM  
-    INSTR_LOAD = 0x9         // 1001 MMMM  
+    INSTR_LOAD = 0x9,         // 1001 MMMM  
+    INSTR_COUNT
 } InstructionOpcode;
 
 // Modifiers call operations (CALL)
@@ -52,7 +53,7 @@ typedef enum {
     JMP_MEM_UNCONDITIONAL = 0x8, // pc<=mem32[gpr[A]+D];
     JMP_MEM_EQ = 0x9,          // if (gpr[B] == gpr[C]) pc<=mem32[gpr[A]+D];
     JMP_MEM_NE = 0xA,          // if (gpr[B] != gpr[C]) pc<=mem32[gpr[A]+D];
-    JMP_MEM_GT = 0xB           // if (gpr[B] signed> gpr[C]) pc<=mem32[gpr[A]+D];
+    JMP_MEM_GT = 0xB,           // if (gpr[B] signed> gpr[C]) pc<=mem32[gpr[A]+D];
 } JumpModifier;
 
 // Modifiers for arithmetic operations

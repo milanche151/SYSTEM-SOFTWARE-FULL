@@ -30,25 +30,25 @@ InstrDesc instr_descs[INSTR_TYPE_COUNT] = {
   [INSTR_JMP] = {
     .family = INSTR_FAMILY_TWOREG_ONEOP,
     .opcode = 0x03,
-    .modifier = 0x00,
+    .modifier = 0x08,
     .name = "jmp",
   },
   [INSTR_BEQ] = {
     .family = INSTR_FAMILY_TWOREG_ONEOP,
     .opcode = 0x03,
-    .modifier = 0x01,
+    .modifier = 0x09,
     .name = "beq",
   },
   [INSTR_BNE] = {
     .family = INSTR_FAMILY_TWOREG_ONEOP,
     .opcode = 0x03,
-    .modifier = 0x02,
+    .modifier = 0x0a,
     .name = "bne",
   },
   [INSTR_BGT] = {
     .family = INSTR_FAMILY_TWOREG_ONEOP,
     .opcode = 0x03,
-    .modifier = 0x03,
+    .modifier = 0x0b,
     .name = "bgt",
   },
   [INSTR_PUSH] = {
