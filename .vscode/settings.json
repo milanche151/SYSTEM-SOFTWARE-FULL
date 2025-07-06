@@ -9,6 +9,12 @@
     "vector.h": "c",
     "string.h": "c",
     "parser.tab.h": "c",
-    "typeinfo": "c"
+    "typeinfo": "c",
+    "linker.h": "c",
+    "util.h": "c",
+    "stdint.h": "c",
+    "stdio.h": "c",
+    "emulator.h": "c",
+    "stdlib.h": "c"
   }
 }

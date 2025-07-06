@@ -57,17 +57,23 @@ VECTOR_DECLARE(VecRelocation, Relocation);
 
 typedef enum{
   BIND_TYPE_LOCAL,
-  BIND_TYPE_GLOBAL
+  BIND_TYPE_GLOBAL,
+
+  BIND_TYPE_COUNT,
 }symTableBind;
 
+typedef uint32_t CORE_ADDR;
+
 typedef struct SymTableRow{
- char* name;
- size_t section;
- uint32_t value;
- symTableType type;
- bool defined;
- symTableBind bind;
-} SymTableRow;
+  char* name;
+  size_t section;
+  CORE_ADDR value;
+  symTableType type;
+  bool defined;
+  symTableBind bind;
+  struct SymTableRow* definition; //not used during assembly phase
+} 
+SymTableRow;
 
 VECTOR_DECLARE(VecSymTbl,SymTableRow);
 
@@ -78,7 +84,7 @@ typedef enum ExprType{
 
 typedef struct Expression{
   ExpressionType type;
-  uint32_t val;
+  CORE_ADDR val;
   char* name;
 } Expression;
 
@@ -137,10 +143,13 @@ struct Assembler {
 
 #include "parser.tab.h"
 
+#define EXTERN_SECTION 0
+
 struct Assembler assemblerCreate(void);
 void assemblerDestroy(struct Assembler *assembler);
 void assemblerPrint(const struct Assembler* assembler);
 void AssemblerEndOfFile(struct Assembler *assembler);
+void assemblerPrintObjectFile(const struct Assembler *assembler,FILE* file);
 
 //_________________________________________misc_functions________________________________________________
 void insertSymSection(struct Assembler* assembler, char* name);
@@ -160,9 +169,12 @@ void externSym(struct Assembler* assembler, VecString symlist);
 
 //_________________________________________instructions____________________________________________________
 void instructionNoop(struct Assembler *assembler, InstrType instr_type);
+void instructionRet(struct Assembler *assembler);
+void instructionIret(struct Assembler *assembler);
 void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int reg);
 void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD);
 void instructionLoadStore(struct Assembler *assembler, InstrType instrType, Operand operand, int regD);
+void instructionCSRReadWrite(struct Assembler *assembler, InstrType instr_type, int regGPR, int regCSR);
 void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand);
 
 #endif
