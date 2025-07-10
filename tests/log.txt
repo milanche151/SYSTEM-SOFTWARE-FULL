@@ -1,0 +1,102 @@
+ASSEMBLER PRINT:
+Symtab:
+Num   Name       Section    Binding    Value      Type       Status    
+0     *UNDEF*    *UNDEF*    LOCAL      0          Section    Defined   
+1     text       text       LOCAL      0          Section    Defined   
+2     data       data       LOCAL      0          Section    Defined   
+3     test_symbol data       LOCAL      0          NoType     Defined   
+4     test_data  data       LOCAL      4          NoType     Defined   
+ld <immed>536870912, %r14
+ld <immed>305419896, %r1
+ld <immed>test_symbol, %r2
+ld <memdir>268435456, %r3
+ld <memdir>test_data, %r4
+ld <regdir>1, %r5
+ld <regind>[14], %r6
+halt 
+.word -2023406815
+.word -1430532899
+MACHINE CODE:
+Section index = 1
+Section size = 60
+92 ef 00 24 92 1f 00 24
+92 2f 00 24 92 3f 00 24
+92 33 00 00 92 4f 00 20
+92 44 00 00 91 51 00 00
+92 6e 00 00 00 00 00 00
+00 00 00 20 78 56 34 12
+00 00 00 00 00 00 00 10
+00 00 00 00 
+RELOCATIONS:
+Offset     Type       Symbol     Addend
+48         DATA32     data       0    
+56         DATA32     data       4    
+
+Section index = 2
+Section size = 8
+21 43 65 87 dd cc bb aa
+
+RELOCATIONS:
+Offset     Type       Symbol     Addend
+
+Section data, start = 20000000, end = 20000008
+Section text, start = 40000000, end = 4000003c
+Emulator loading:
+20000000: 21 43 65 87 dd cc bb aa 
+40000000: 92 ef 00 24 92 1f 00 24 
+40000008: 92 2f 00 24 92 3f 00 24 
+40000010: 92 33 00 00 92 4f 00 20 
+40000018: 92 44 00 00 91 51 00 00 
+40000020: 92 6e 00 00 00 00 00 00 
+40000028: 00 00 00 20 78 56 34 12 
+40000030: 00 00 00 20 00 00 00 10 
+40000038: 04 00 00 20 00 00 00 00 
+Hex file loaded successfully.
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000000 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000004 
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 12345678 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000008 
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 12345678 r2  = 20000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 4000000c 
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 12345678 r2  = 20000000 r3  = 10000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000010 
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 12345678 r2  = 20000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000014 
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 12345678 r2  = 20000000 r3  = 00000000 r4  = 20000004 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000018 
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 12345678 r2  = 20000000 r3  = 00000000 r4  = aabbccdd r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 4000001c 
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 12345678 r2  = 20000000 r3  = 00000000 r4  = aabbccdd r5  = 12345678 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000020 
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 12345678 r2  = 20000000 r3  = 00000000 r4  = aabbccdd r5  = 12345678 r6  = 87654321 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000024 
+Instruction INSTR_HALT executed.
+r0  = 00000000 r1  = 12345678 r2  = 20000000 r3  = 00000000 r4  = aabbccdd r5  = 12345678 r6  = 87654321 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000028 
+Program executed sucessfully
+Processor registers:
+r0  = 0000
+r1  = 12345678
+r2  = 20000000
+r3  = 0000
+r4  = aabbccdd
+r5  = 12345678
+r6  = 87654321
+r7  = 0000
+r8  = 0000
+r9  = 0000
+r10 = 0000
+r11 = 0000
+r12 = 0000
+r13 = 0000
+r14 = 20000000
+r15 = 40000028
