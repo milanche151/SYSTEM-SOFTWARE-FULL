@@ -121,9 +121,38 @@ static void printObjFile(FILE* output_file, ObjFile *objFile){
   }
 }
 
+typedef struct SectionSymTab{
+  ObjSection* section;
+  SymTableRow* symTab;
+}SectionSymTab;
 
-bool LinkerAddGlobalSymbol(Linker *linker, size_t file_idx, size_t sym_idx){
+VECTOR_DECLARE(VecObjSectionSymTab, SectionSymTab);
+VECTOR_IMPLEMENT(VecObjSectionSymTab, SectionSymTab);
+
+typedef struct UnifiedSection
+{
+  char* name;
+  VecObjSectionSymTab sections;
+  CORE_ADDR curr_n_bytes;
+  size_t curr_n_relocs;
+}UnifiedSection;
+
+VECTOR_DECLARE(VecUnifiedSection, UnifiedSection);
+VECTOR_IMPLEMENT(VecUnifiedSection, UnifiedSection);
+
+// if collision with function names is not necessary (for example, when generating hex)
+// pass NULL as sections param
+bool LinkerAddGlobalSymbol(Linker *linker, VecUnifiedSection *sections, size_t file_idx, size_t sym_idx){
   const SymTableRow *curr_sym = &linker->files[file_idx].symbols[sym_idx];
+
+  if(sections != NULL){
+    for(size_t i = 0; i < sections->size; i++){
+      if(strcmp(curr_sym->name, sections->data[i].name) == 0){
+        printf("Symbol name %s collides with section name.\n", curr_sym->name);
+        return false;
+      }
+    }
+  }
 
   for(size_t i = 0; i < linker->globalSyms.size; i++){
     GlobalSym global_id = linker->globalSyms.data[i];
@@ -344,8 +373,7 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
     for(size_t j = 0; j < linker.files[i].n_syms; j++){
       SymTableRow *curr_sym = &linker.files[i].symbols[j];
       if(curr_sym->bind == BIND_TYPE_GLOBAL && curr_sym->section != EXTERN_SECTION){
-        if(!LinkerAddGlobalSymbol(&linker, i, j)){
-          printf("Global symbol %s defined multiple times.\n", curr_sym->name);
+        if(!LinkerAddGlobalSymbol(&linker, NULL, i, j)){
           linker.correct = false;
         }
       }
@@ -440,11 +468,6 @@ void LinkerDestroy(Linker *linker){
   myFree(linker->files);
 }
 
-typedef struct SectionSymTab{
-  ObjSection* section;
-  SymTableRow* symTab;
-}SectionSymTab;
-
 static int section_compare(const void *b1, const void *b2){
   const SectionSymTab *sect1 = b1;
   const SectionSymTab *sect2 = b2;
@@ -535,20 +558,6 @@ void LinkerPrintHexFile(const Linker *linker, FILE *output_file){
   }
 }
 
-VECTOR_DECLARE(VecObjSectionSymTab, SectionSymTab);
-VECTOR_IMPLEMENT(VecObjSectionSymTab, SectionSymTab);
-
-typedef struct UnifiedSection
-{
-  char* name;
-  VecObjSectionSymTab sections;
-  CORE_ADDR curr_n_bytes;
-  size_t curr_n_relocs;
-}UnifiedSection;
-
-VECTOR_DECLARE(VecUnifiedSection, UnifiedSection);
-VECTOR_IMPLEMENT(VecUnifiedSection, UnifiedSection);
-
 VECTOR_IMPLEMENT(VecString,char*);
 
 typedef struct NewSymDesc {
@@ -605,48 +614,6 @@ Linker LinkerCreateRelocatable(FILE *input_files[], size_t n_input_files, FILE *
 
   if(!linker.correct) return linker;
 
-  // add all global symbols
-  for(size_t i = 0; i < linker.n_files; i++){
-    for(size_t j = 0; j < linker.files[i].n_syms; j++){
-      SymTableRow *curr_sym = &linker.files[i].symbols[j];
-      if(curr_sym->bind == BIND_TYPE_GLOBAL && curr_sym->section != EXTERN_SECTION){
-        if(!LinkerAddGlobalSymbol(&linker, i, j)){
-          printf("Global symbol %s defined multiple times.\n", curr_sym->name);
-          linker.correct = false;
-        }
-      }
-    }
-  }
-  VecString externNames = VecStringCreate();
-  // check if all extern symbols are defined
-  for(size_t i = 0; i < linker.n_files; i++){
-    for(size_t j = 0; j < linker.files[i].n_syms; j++){
-      SymTableRow *curr_sym = &linker.files[i].symbols[j];
-
-      // don't check for *UNDEF* symbol (its index is EXTERN SECTIONS)
-      if(j != EXTERN_SECTION && curr_sym->section == EXTERN_SECTION){
-        SymTableRow* definition =LinkerFindExternSymbol(&linker, curr_sym->name);
-        if(definition == NULL){
-          bool found = false;
-          for(size_t i = 0; i < externNames.size; i++){
-            if(strcmp(externNames.data[i],curr_sym->name) == 0){
-              found = true;
-              break;
-            }
-          }
-          if(!found){
-            VecStringPush(&externNames,curr_sym->name);
-          }
-        }
-        else{
-          curr_sym->definition = definition;
-        }
-      }
-    }
-  }
-  
-  if(!linker.correct) return linker;
-
   VecUnifiedSection unifiedSections = VecUnifiedSectionCreate();
   for (size_t i = 0; i < linker.n_files; i++){
     ObjFile* curr_file = &linker.files[i];
@@ -685,6 +652,47 @@ Linker LinkerCreateRelocatable(FILE *input_files[], size_t n_input_files, FILE *
       found_uni_sect->curr_n_relocs += curr_section->n_relocs;
     }
   }
+
+  // add all global symbols
+  for(size_t i = 0; i < linker.n_files; i++){
+    for(size_t j = 0; j < linker.files[i].n_syms; j++){
+      SymTableRow *curr_sym = &linker.files[i].symbols[j];
+      if(curr_sym->bind == BIND_TYPE_GLOBAL && curr_sym->section != EXTERN_SECTION){
+        if(!LinkerAddGlobalSymbol(&linker, &unifiedSections, i, j)){
+          linker.correct = false;
+        }
+      }
+    }
+  }
+  VecString externNames = VecStringCreate();
+  // check if all extern symbols are defined
+  for(size_t i = 0; i < linker.n_files; i++){
+    for(size_t j = 0; j < linker.files[i].n_syms; j++){
+      SymTableRow *curr_sym = &linker.files[i].symbols[j];
+
+      // don't check for *UNDEF* symbol (its index is EXTERN SECTIONS)
+      if(j != EXTERN_SECTION && curr_sym->section == EXTERN_SECTION){
+        SymTableRow* definition =LinkerFindExternSymbol(&linker, curr_sym->name);
+        if(definition == NULL){
+          bool found = false;
+          for(size_t i = 0; i < externNames.size; i++){
+            if(strcmp(externNames.data[i],curr_sym->name) == 0){
+              found = true;
+              break;
+            }
+          }
+          if(!found){
+            VecStringPush(&externNames,curr_sym->name);
+          }
+        }
+        else{
+          curr_sym->definition = definition;
+        }
+      }
+    }
+  }
+  
+  if(!linker.correct) return linker;
 
   /*
   symtab is consisted of:
