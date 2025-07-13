@@ -176,6 +176,30 @@ static void emulatorPrint(const Emulator* emu){
   printf("\n");
 }
 
+static void emulatorRaiseExpection(Emulator *emu, int cause){
+  // can't handle exception if already inside interrupt routine
+  if(CSR(CSR_STATUS) & STATUS_INTERRUPT_BIT != 0) {
+    return;
+  }
+
+  assert(cause >= 0 && cause <= 4);
+
+  bool isAligned = true;
+
+  REG(REG_SP) -= 4;
+  memoryWriteWord(emu, REG(REG_SP), CSR(CSR_STATUS), &isAligned);
+  REG(REG_SP) -= 4;
+  memoryWriteWord(emu, REG(REG_SP), REG(REG_PC), &isAligned);
+
+  if(isAligned){
+    emu->status = EMU_STATUS_RUNNING;
+
+    CSR(CSR_STATUS) |= 0x07;
+    CSR(CSR_CAUSE) = cause;
+    REG(REG_PC) = CSR(CSR_HANDLER);
+  }
+}
+
 void emulatorRun(Emulator* emu){
   while(emu->status == EMU_STATUS_RUNNING){
     bool isAligned = true;
@@ -190,11 +214,12 @@ void emulatorRun(Emulator* emu){
     uint32_t a      = (instr << 8) >> 28;
     uint32_t b      = (instr << 12) >> 28;
     uint32_t c      = (instr << 16) >> 28;
-    uint32_t d      = (instr << 20) >> 20;
+    uint32_t d      = ((int32_t)instr << 20) >> 20;
 
     ADVANCE_PC();
 
-    assert(opcode < 0x10 && mod < 0x10 && a < 0x10 && b < 0x10 && c < 0x10 && d < 0x1000);
+    assert(opcode < 0x10 && mod < 0x10 && a < 0x10 && b < 0x10 && c < 0x10
+      && (d >= -0x800 || d < 0x800));
     switch ((InstructionOpcode)opcode)
     {
     case INSTR_HALT:
@@ -202,7 +227,7 @@ void emulatorRun(Emulator* emu){
       break;
 
     case INSTR_INT:
-      //TODO
+      emu->status = EMU_STATUS_SOFTWARE_INTERRUPT;
       break;
 
     case INSTR_CALL:{
@@ -414,7 +439,7 @@ void emulatorRun(Emulator* emu){
     }
 
 
-    #if 0
+    #if 1
     static const char* instructionOpcodePrint[INSTR_COUNT] = {
       [INSTR_HALT] = "INSTR_HALT",
       [INSTR_INT] = "INSTR_INT",
@@ -433,34 +458,58 @@ void emulatorRun(Emulator* emu){
       if(i % 8 == 8 - 1) printf("\n");
     }
 
+    static const char *csr_names[CSR_COUNT] = {
+      [CSR_STATUS] = "Status",
+      [CSR_HANDLER] = "Handler",
+      [CSR_CAUSE] = "Cause",
+    };
+
+    for(size_t i = 0; i < CSR_COUNT; i++){
+      printf("%-8s = %08x           ", csr_names[i], CSR(i));
+    }
+    printf("\n");
+
     #endif
+
+    static const char *error_print[EMU_STATUS_COUNT] = {
+      [EMU_STATUS_SOFTWARE_INTERRUPT] = "Software interrupt",
+      [EMU_STATUS_BAD_MOD] = "Bad mod",
+      [EMU_STATUS_BAD_OP] = "Bad op",
+      [EMU_STATUS_BUS_ERROR] = "Bus error",
+      [EMU_STATUS_DIV_BY_ZERO] = "Div by zero",
+    };
+
+    switch (emu->status)
+    {
+    case EMU_STATUS_SOFTWARE_INTERRUPT:
+      emulatorRaiseExpection(emu, 4);
+      if(emu->status != EMU_STATUS_RUNNING){
+        printf("Unrecoverable exception: %s.\n", error_print[emu->status]);
+      }
+      break;
+    case EMU_STATUS_BAD_MOD:
+    case EMU_STATUS_BAD_OP:
+    case EMU_STATUS_BUS_ERROR:
+    case EMU_STATUS_DIV_BY_ZERO:
+      emulatorRaiseExpection(emu, 1);
+      if(emu->status != EMU_STATUS_RUNNING){
+        printf("Unrecoverable exception: %s.\n", error_print[emu->status]);
+      }
+      break;
+    case EMU_STATUS_RUNNING:
+      // nothing
+      break;
+    case EMU_STATUS_FINISHED:
+      // nothing
+      break;
+      
+    default:
+      assert(0);
+      break;
+    }
   }
 
-  switch (emu->status)
-  {
-  case EMU_STATUS_BAD_MOD:
-    printf("Error:Bad operation modifier.\n");
-    break;
-  case EMU_STATUS_BAD_OP:
-    printf("Error:Bad operation.\n");
-    break;
-  case EMU_STATUS_BUS_ERROR:
-    printf("Error:Buss error.\n");
-    break;
-  case EMU_STATUS_DIV_BY_ZERO:
-    printf("Error:Division by zero.\n");
-    break;
-  case EMU_STATUS_RUNNING:
-    assert(0);
-    break;
-  case EMU_STATUS_FINISHED:
-    printf("Program executed sucessfully\n");
-    break;
-    
-  default:
-    assert(0);
-    break;
-  }
+  printf("Program executed sucessfully\n");
   emulatorPrint(emu);
 }
 

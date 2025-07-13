@@ -1337,13 +1337,13 @@ yyreduce:
 
   case 30: /* instruction: CSRRD SREG ',' REG  */
 #line 106 "misc/parser.y"
-                       { instructionCSRReadWrite(assembler, INSTR_CSRRD, (yyvsp[-2].number), (yyvsp[0].number)); }
+                       { instructionCSRReadWrite(assembler, INSTR_CSRRD, (yyvsp[0].number), (yyvsp[-2].number)); }
 #line 1342 "src/parser.tab.c"
     break;
 
   case 31: /* instruction: CSRWR REG ',' SREG  */
 #line 107 "misc/parser.y"
-                       { instructionCSRReadWrite(assembler, INSTR_CSRWR, (yyvsp[0].number), (yyvsp[-2].number)); }
+                       { instructionCSRReadWrite(assembler, INSTR_CSRWR, (yyvsp[-2].number), (yyvsp[0].number)); }
 #line 1348 "src/parser.tab.c"
     break;
 

@@ -16,12 +16,15 @@ typedef enum {
     EMU_STATUS_LOAD_FAILED,
     EMU_STATUS_RUNNING,
     EMU_STATUS_FINISHED,
+    EMU_STATUS_SOFTWARE_INTERRUPT,
     EMU_STATUS_BUS_ERROR, /* when accessing misaligned memory */
     EMU_STATUS_BAD_OP,
     EMU_STATUS_BAD_MOD,
     EMU_STATUS_DIV_BY_ZERO, 
     EMU_STATUS_COUNT
 }Status;
+
+#define STATUS_INTERRUPT_BIT (1 << 2)
 
 // Instruction type (1st byte)
 typedef enum {

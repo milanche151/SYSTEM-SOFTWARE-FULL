@@ -103,8 +103,8 @@ instruction:
   | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
   | LD operand ',' REG { instructionLoadStore(assembler, INSTR_LD, $2,$4); }
   | ST REG ',' operand { instructionLoadStore(assembler, INSTR_STR, $4, $2); }
-  | CSRRD SREG ',' REG { instructionCSRReadWrite(assembler, INSTR_CSRRD, $2, $4); }
-  | CSRWR REG ',' SREG { instructionCSRReadWrite(assembler, INSTR_CSRWR, $4, $2); }
+  | CSRRD SREG ',' REG { instructionCSRReadWrite(assembler, INSTR_CSRRD, $4, $2); }
+  | CSRWR REG ',' SREG { instructionCSRReadWrite(assembler, INSTR_CSRWR, $2, $4); }
   ;
 
 operand:
