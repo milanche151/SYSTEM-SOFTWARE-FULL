@@ -130,6 +130,52 @@ void emulatorLoad(Emulator* emu, FILE* inputFile){
 #define CSR(x) (emu->cpu.csr[(x)])
 #define ADVANCE_PC() ((void)(REG(REG_PC) += 4))
 
+static void emulatorPrintFrame(uint32_t base_addr, const MemFrame *memframe){
+  assert(base_addr % 0x10000 == 0);
+
+  for(size_t i = 0; i < FRAME_SIZE; i += 16){
+    bool is_used = false;
+    
+    for(size_t j = 0; j < 16; j++){
+      if((*memframe)[i + j] != 0) {
+        is_used = true;
+        break;
+      }
+    }
+
+    if(is_used){
+      printf("%08x: ", (uint32_t)(base_addr + i));
+      for(size_t j = 0; j < 16; j++){
+        printf("%02x ", (*memframe)[i + j]);
+      }
+      printf("\n");
+    }
+  }
+}
+
+static void emulatorPrint(const Emulator* emu){
+  printf("\n");
+  printf("Memory content:\n");
+  for(size_t i = 0; i < PMT2_SIZE; i++){
+    pmt1 *curr_pmt1 = emu->mem[i];
+    if(curr_pmt1 == NULL) continue;
+    
+    for(size_t j = 0; j < PMT1_SIZE; j++){
+      MemFrame *curr_frame = (*curr_pmt1)[j];
+      if(curr_frame == NULL) continue;
+
+      emulatorPrintFrame((i * 0x100 + j) * 0x10000, curr_frame);
+    }
+  }
+  printf("\n");
+
+  printf("Processor registers:\n");
+  for (size_t i = 0; i < 16; i++){
+    printf("r%-2lu = %08x\n",i,emu->cpu.reg[i]);
+  }
+  printf("\n");
+}
+
 void emulatorRun(Emulator* emu){
   while(emu->status == EMU_STATUS_RUNNING){
     bool isAligned = true;
@@ -368,7 +414,7 @@ void emulatorRun(Emulator* emu){
     }
 
 
-    #if 1
+    #if 0
     static const char* instructionOpcodePrint[INSTR_COUNT] = {
       [INSTR_HALT] = "INSTR_HALT",
       [INSTR_INT] = "INSTR_INT",
@@ -415,10 +461,7 @@ void emulatorRun(Emulator* emu){
     assert(0);
     break;
   }
-  printf("Processor registers:\n");
-  for (size_t i = 0; i < 16; i++){
-    printf("r%-2lu = %08x\n",i,emu->cpu.reg[i]);
-  }
+  emulatorPrint(emu);
 }
 
 void emulatorMemoryTest(Emulator *emu){
