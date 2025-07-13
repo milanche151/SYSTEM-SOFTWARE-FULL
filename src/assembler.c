@@ -557,10 +557,10 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
         assembler->correct = false;
         break;
       case OPERAND_TYPE_MEMDIR_LIT:
-        insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, REGISTER_ZERO, regD, 0);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, REGISTER_PC, REGISTER_ZERO, regD, 0);
         break;
       case OPERAND_TYPE_MEMDIR_SYM:
-        insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, REGISTER_ZERO, regD, 0);
+        insertGenericInstruction(assembler, desc->opcode, 0x02, REGISTER_PC, REGISTER_ZERO, regD, 0);
         break;
       case OPERAND_TYPE_REGDIR:
         assembler->correct = false;

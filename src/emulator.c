@@ -292,7 +292,7 @@ void emulatorRun(Emulator* emu){
       switch ((StoreModifier)mod)
       {
       case STORE_REG_INDIRECT:
-        memoryWriteWord(emu,REG(a)+REG(b)+d,REG(c),&isAligned);
+        memoryWriteWord(emu, REG(a)+REG(b)+d, REG(c), &isAligned);
         if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
         break;
       case STORE_REG_INDIRECT_PREINC:
@@ -300,7 +300,9 @@ void emulatorRun(Emulator* emu){
         if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
         break;
       case STORE_MEM_INDIRECT:
-        memoryWriteWord(emu,memoryReadWord(emu,REG(a)+REG(b)+d,&isAligned),REG(c),&isAligned);
+        uint32_t address = memoryReadWord(emu,REG(a)+REG(b)+d,&isAligned);
+        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+        memoryWriteWord(emu, address, REG(c), &isAligned);
         if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
         break;
       default:
@@ -415,7 +417,7 @@ void emulatorRun(Emulator* emu){
   }
   printf("Processor registers:\n");
   for (size_t i = 0; i < 16; i++){
-    printf("r%-2lu = %04x\n",i,emu->cpu.reg[i]);
+    printf("r%-2lu = %08x\n",i,emu->cpu.reg[i]);
   }
 }
 

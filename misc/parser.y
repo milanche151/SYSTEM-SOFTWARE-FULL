@@ -26,6 +26,8 @@ extern struct Assembler *assembler;
   Operand operand;
 }
 
+%debug
+
 %token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR
 %token<string> SYMBOL
 %token<string> STRING
@@ -49,6 +51,7 @@ lines:
   lines ENDL line 
   | lines ENDL
   | line
+  | ENDL
   ;
   
 line:
@@ -162,6 +165,7 @@ EXPR_LIST:
 %%
 
 void yyerror(const char* s) {
-    printf("Error: %s\n", s);
+  extern int curr_line;
+  printf("Error: %s at line %d.\n", s, curr_line);
 }
 

@@ -11,6 +11,9 @@ enum AssemblerArgsState {
 
 int main(int argc, const char **argv){
 
+  extern int yydebug;
+  yydebug = 0;
+
   const char *input_path = NULL;
   const char *output_path = NULL;
   enum AssemblerArgsState state = ASSEMBLER_ARGS_STATE_INPUT;

@@ -3,6 +3,9 @@
 #include "parser.tab.h"
 #include <stdio.h>
 #include <string.h>
+
+int curr_line = 1;
+
 %}
 %option noyywrap
 %%
@@ -48,7 +51,7 @@ csrwr {return CSRWR;}
 "%status" {yylval.number=0;return SREG;}
 " " { }
 % {return '%';}
-\n {return ENDL;}
+\n {curr_line++; return ENDL;}
 [-]?[0-9]+ {yylval.number=atoi(yytext);return NUM;}
 : {return ':' ;}
 , {yylval.string=strdup(yytext);return ',' ;}
