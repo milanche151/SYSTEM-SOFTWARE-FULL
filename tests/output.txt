@@ -1,0 +1,61 @@
+ASSEMBLER PRINT:
+Symtab:
+Num   Name       Section    Binding    Value      Type       Status    
+0     *UNDEF*    *UNDEF*    LOCAL      0          Section    Defined   
+1     text       text       LOCAL      0          Section    Defined   
+2     data       data       LOCAL      0          Section    Defined   
+3     a          data       GLOBAL     0          NoType     Defined   
+4     b          data       GLOBAL     4          NoType     Defined   
+5     c          *UNDEF*    LOCAL      0          NoType     Defined   
+ld <immed>a, %r1
+ld <immed>b, %r2
+.word b
+.word 25
+MACHINE CODE:
+Section index = 1
+Section size = 16
+92 1f 00 04 92 2f 00 04
+00 00 00 00 00 00 00 00
+
+RELOCATIONS:
+Offset     Type       Symbol     Addend
+8          DATA32     data       0    
+12         DATA32     data       4    
+
+Section index = 2
+Section size = 8
+00 00 00 00 19 00 00 00
+
+RELOCATIONS:
+Offset     Type       Symbol     Addend
+0          DATA32     data       4    
+
+ASSEMBLER PRINT:
+Symtab:
+Num   Name       Section    Binding    Value      Type       Status    
+0     *UNDEF*    *UNDEF*    LOCAL      0          Section    Defined   
+1     text       text       LOCAL      0          Section    Defined   
+2     data       data       LOCAL      0          Section    Defined   
+3     c          data       GLOBAL     0          NoType     Defined   
+4     d          *UNDEF*    LOCAL      0          NoType     Defined   
+ld <immed>c, %r3
+ld <immed>d, %r4
+.word 8
+MACHINE CODE:
+Section index = 1
+Section size = 16
+92 3f 00 04 92 4f 00 04
+00 00 00 00 00 00 00 00
+
+RELOCATIONS:
+Offset     Type       Symbol     Addend
+8          DATA32     data       0    
+12         DATA32     d          0    
+
+Section index = 2
+Section size = 4
+08 00 00 00 
+RELOCATIONS:
+Offset     Type       Symbol     Addend
+
+

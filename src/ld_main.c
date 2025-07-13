@@ -11,6 +11,7 @@ enum LinkerArgsState {
 enum LinkerOutputType {
   LINKER_OUTPUT_ERROR,
   LINKER_OUTPUT_HEX,
+  LINKER_OUTPUT_OBJ,
 };
 
 VECTOR_DECLARE(VecFILE, FILE *);
@@ -30,6 +31,9 @@ int main(int argc, char** argv){
     case LINKER_ARGS_STATE_INPUT:
       if(strcmp(curr_arg, "-hex") == 0){
         output_type = LINKER_OUTPUT_HEX;
+      }
+      else if(strcmp(curr_arg, "-relocatable") == 0){
+        output_type = LINKER_OUTPUT_OBJ;
       }
       else if(strncmp(curr_arg, "-place=", sizeof("-place=") - sizeof("")) == 0){
         size_t name_len = 0;
@@ -82,26 +86,40 @@ int main(int argc, char** argv){
     }
   }
 
-  if(output_type != LINKER_OUTPUT_HEX){
+  if(output_type == LINKER_OUTPUT_HEX){
+    Linker linker = LinkerCreate(
+      input_files.data, input_files.size,
+      section_places.data, section_places.size
+    );
+
+    if(output_file == NULL){
+      printf("Output file invalid.\n");
+      goto error;
+    }
+
+    if(linker.correct){
+      LinkerPrintHexFile(&linker, output_file);
+    }
+
+    LinkerDestroy(&linker);
+  }
+  else if(output_type == LINKER_OUTPUT_OBJ){
+
+    if(output_file == NULL){
+      printf("Output file invalid.\n");
+      goto error;
+    }
+
+    Linker linker = LinkerCreateRelocatable(
+      input_files.data, input_files.size, output_file
+    );
+
+    LinkerDestroy(&linker);
+  }
+  else {
     printf("Output type not specified.\n");
     goto error;
   }
-
-  Linker linker = LinkerCreate(
-    input_files.data, input_files.size,
-    section_places.data, section_places.size
-  );
-
-  if(output_file == NULL){
-    printf("Output file invalid.\n");
-    goto error;
-  }
-
-  if(linker.correct){
-    LinkerPrintHexFile(&linker, output_file);
-  }
-
-  LinkerDestroy(&linker);
 
   VecFILEDestroy(&input_files);
   VecSectionPlaceDestroy(&section_places);
