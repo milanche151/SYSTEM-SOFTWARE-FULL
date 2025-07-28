@@ -307,7 +307,8 @@ void externSym(struct Assembler* assembler,VecString symlist){
 }
 
 void ascii(struct Assembler* assembler, char* string){
-  Section *current_section = &assembler->sections.data[assembler->sections.size - 1];
+  if(assembler->sections.size > 0){
+    Section *current_section = &assembler->sections.data[assembler->sections.size - 1];
     Line line  = {
       .type = LINE_TYPE_DIRECTIVE,
       .directive = {
@@ -329,6 +330,10 @@ void ascii(struct Assembler* assembler, char* string){
     }
 
     VecLinePush(&current_section->lines,line);
+  }else{
+    printf("Directive placed outside of section.");
+    assembler->correct = false;
+  }
 }
 
 // this register's value is always 0 (reg0's value is always 0)

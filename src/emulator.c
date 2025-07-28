@@ -5,6 +5,7 @@
 #define START_PC 0x40000000
 #define REG_PC 15
 #define REG_SP 14
+#define TIM_CFG_ADDR 0xFFFFFF10
 
 typedef enum csr_reg {
   CSR_STATUS,
@@ -14,10 +15,16 @@ typedef enum csr_reg {
   CSR_COUNT,
 } csr_reg;
 
+
+
 Emulator emulatorCreate(){
   Emulator em = { 0 };
   em.cpu.reg[REG_PC] = START_PC;
-
+  em.timer = (Timer){
+    .curr_time = 0,
+    .set_time = 0,
+    .start_time = 0
+  };
   return em;
 }
 
@@ -84,11 +91,26 @@ static void memoryWriteWord(Emulator *emu, uint32_t addr, uint32_t word,bool* is
   *isAligned = *isAligned && addr % 4 == 0;
   if(!*isAligned) return;
 
+  if(addr == TIM_CFG_ADDR && word < 0x8){
+    emu->timer.set_time = (word + 1)*500; 
+  }
+
   for (size_t i = 0; i < 4; i++){
     *getMemoryAddr(emu,addr+i) = word;
     word >>= 8;
   }
   
+}
+void tick(Emulator* emu){
+  struct timespec now;
+  timespec_get(&now, TIME_UTC);
+  emu->timer.curr_time = ((int64_t) now.tv_sec) * 1000 + ((int64_t) now.tv_nsec) / 1000000;
+  time_t timedif = emu->timer.curr_time - emu->timer.start_time;
+    printf("Timer : %lu\n", timedif);
+  if(timedif >= emu->timer.set_time){
+    emu->status = EMU_STATUS_TIMER_INTERRUPT;
+    emu->timer.start_time = emu->timer.curr_time;
+  }
 }
 
 void emulatorLoad(Emulator* emu, FILE* inputFile){
@@ -96,7 +118,6 @@ void emulatorLoad(Emulator* emu, FILE* inputFile){
   uint32_t byte;
 
   printf("Emulator loading:\n");
-
   while(true){
     int read = 0;
     read = fscanf(inputFile,"%x:",&addr);
@@ -201,8 +222,14 @@ static void emulatorRaiseExpection(Emulator *emu, int cause){
 }
 
 void emulatorRun(Emulator* emu){
+  bool isAligned = true;
+  struct timespec now;
+  emu->timer.set_time = 500;
+  timespec_get(&now, TIME_UTC);
+  emu->timer.start_time = ((int64_t) now.tv_sec) * 1000 + ((int64_t) now.tv_nsec) / 1000000;
+  emu->timer.curr_time = emu->timer.start_time;
+  memoryWriteWord(emu,TIM_CFG_ADDR,0,&isAligned);
   while(emu->status == EMU_STATUS_RUNNING){
-    bool isAligned = true;
     if(REG(REG_PC) % 4 != 0) {
       emu->status == EMU_STATUS_BUS_ERROR;
       continue;
@@ -217,259 +244,261 @@ void emulatorRun(Emulator* emu){
     uint32_t d      = ((int32_t)instr << 20) >> 20;
 
     ADVANCE_PC();
-
+    tick(emu);
+    
     assert(opcode < 0x10 && mod < 0x10 && a < 0x10 && b < 0x10 && c < 0x10
       && (d >= -0x800 || d < 0x800));
-    switch ((InstructionOpcode)opcode)
-    {
-    case INSTR_HALT:
-      emu->status = EMU_STATUS_FINISHED;
-      break;
-
-    case INSTR_INT:
-      emu->status = EMU_STATUS_SOFTWARE_INTERRUPT;
-      break;
-
-    case INSTR_CALL:{
-      switch ((CallModifier)mod)
+    if(emu->status == EMU_STATUS_RUNNING){
+      switch ((InstructionOpcode)opcode)
       {
-      case CALL_REG_INDIRECT:
-        REG(REG_SP) -= 4;
-        memoryWriteWord(emu, REG(REG_SP), REG_PC, &isAligned);
-        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        REG(REG_PC) = REG(a)+REG(b)+d;
+      case INSTR_HALT:
+        emu->status = EMU_STATUS_FINISHED;
         break;
-      case CALL_MEM_INDIRECT:
-        REG(REG_SP) -= 4;
-        memoryWriteWord(emu, REG(REG_SP), REG_PC, &isAligned);
-        REG(REG_PC) = memoryReadWord(emu,REG(a)+REG(b)+d,&isAligned);
-        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      default:
-        emu->status = EMU_STATUS_BAD_MOD;
-        break;
-      }
-    } break;
 
-    case INSTR_JMP:{
-      switch ((JumpModifier)mod)
-      {
-      case JMP_UNCONDITIONAL:
-        REG(REG_PC) = REG(a)+d;
+      case INSTR_INT:
+        emu->status = EMU_STATUS_SOFTWARE_INTERRUPT;
         break;
-      case JMP_EQ:
-        if(REG(b)== REG(c)) REG(REG_PC) = REG(a)+d;
-        break;
-      case JMP_NE:
-        if(REG(b)!= REG(c)) REG(REG_PC) = REG(a)+d;
-        break;
-      case JMP_GT:
-        if((int32_t)REG(b) > (int32_t)REG(c)) REG(REG_PC) = REG(a)+d;
-        break;
-      case JMP_MEM_UNCONDITIONAL:
-        REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
-        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      case JMP_MEM_EQ:
-        if(REG(b)== REG(c)) {
+
+      case INSTR_CALL:{
+        switch ((CallModifier)mod)
+        {
+        case CALL_REG_INDIRECT:
+          REG(REG_SP) -= 4;
+          memoryWriteWord(emu, REG(REG_SP), REG_PC, &isAligned);
+          if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+          REG(REG_PC) = REG(a)+REG(b)+d;
+          break;
+        case CALL_MEM_INDIRECT:
+          REG(REG_SP) -= 4;
+          memoryWriteWord(emu, REG(REG_SP), REG_PC, &isAligned);
+          REG(REG_PC) = memoryReadWord(emu,REG(a)+REG(b)+d,&isAligned);
+          if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+          break;
+        default:
+          emu->status = EMU_STATUS_BAD_MOD;
+          break;
+        }
+      } break;
+
+      case INSTR_JMP:{
+        switch ((JumpModifier)mod)
+        {
+        case JMP_UNCONDITIONAL:
+          REG(REG_PC) = REG(a)+d;
+          break;
+        case JMP_EQ:
+          if(REG(b)== REG(c)) REG(REG_PC) = REG(a)+d;
+          break;
+        case JMP_NE:
+          if(REG(b)!= REG(c)) REG(REG_PC) = REG(a)+d;
+          break;
+        case JMP_GT:
+          if((int32_t)REG(b) > (int32_t)REG(c)) REG(REG_PC) = REG(a)+d;
+          break;
+        case JMP_MEM_UNCONDITIONAL:
           REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+          break;
+        case JMP_MEM_EQ:
+          if(REG(b)== REG(c)) {
+            REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
+            if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+          }
+          break;
+        case JMP_MEM_NE:
+          if(REG(b)!= REG(c)){
+            REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
+            if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+          }
+          break;
+        case JMP_MEM_GT:
+          if((int32_t)REG(b) > (int32_t)REG(c)){
+            REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
+            if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+          }
+          break;
+        default:
+          emu->status = EMU_STATUS_BAD_MOD;
+          break;
         }
-        break;
-      case JMP_MEM_NE:
-        if(REG(b)!= REG(c)){
-          REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
+      } break;
+
+      case INSTR_XCHG:{
+        REG(b) = REG(c)^REG(b);
+        REG(c) = REG(c)^REG(b);
+        REG(b) = REG(c)^REG(b);
+      } break;
+
+      case INSTR_ARITH:{
+        switch ((ArithModifier)mod)
+        {
+        case ARITH_ADD:
+          REG(a) = REG(b) + REG(c);
+          break;
+        case ARITH_SUB:
+          REG(a) = REG(b) - REG(c);
+          break;
+        case ARITH_MUL:
+          REG(a) = REG(b) * REG(c);
+          break;
+        case ARITH_DIV:
+          if(REG(c) == 0) emu->status = EMU_STATUS_DIV_BY_ZERO;
+          else REG(a) = REG(b) / REG(c);
+          break;
+        
+        default:
+          emu->status = EMU_STATUS_BAD_MOD;
+          break;
+        }
+      } break;
+
+      case INSTR_LOGIC:{
+        switch ((LogicModifier)mod)
+        {
+        case LOGIC_NOT:
+          REG(a) = ~REG(b);
+          break;
+        case LOGIC_AND:
+          REG(a) = REG(b) & REG(c);
+          break;
+        case LOGIC_OR:
+          REG(a) = REG(b) | REG(c);
+          break;
+        case LOGIC_XOR:
+          REG(a) = REG(b) ^ REG(c);
+          break;
+        default:
+          emu->status = EMU_STATUS_BAD_MOD;
+          break;
+        }
+      } break;
+
+      case INSTR_SHIFT:{
+        switch ((ShiftModifier)mod)
+        {
+        case SHIFT_LEFT:
+          REG(a) = REG(b) << REG(c);
+          break;
+        case SHIFT_RIGHT:
+          REG(a) = REG(b) >> REG(c);
+          break;
+        default:
+          emu->status = EMU_STATUS_BAD_MOD;
+          break;
+        }
+      }
+
+      case INSTR_STORE:{
+        switch ((StoreModifier)mod)
+        {
+        case STORE_REG_INDIRECT:
+          memoryWriteWord(emu, REG(a)+REG(b)+d, REG(c), &isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        }
-        break;
-      case JMP_MEM_GT:
-        if((int32_t)REG(b) > (int32_t)REG(c)){
-          REG(REG_PC) = memoryReadWord(emu,REG(a)+d,&isAligned);
+          break;
+        case STORE_REG_INDIRECT_PREINC:
+          memoryWriteWord(emu,(REG(a)+=(REG(b)+d)),REG(c),&isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        }
-        break;
-      default:
-        emu->status = EMU_STATUS_BAD_MOD;
-        break;
-      }
-    } break;
-
-    case INSTR_XCHG:{
-      REG(b) = REG(c)^REG(b);
-      REG(c) = REG(c)^REG(b);
-      REG(b) = REG(c)^REG(b);
-    } break;
-
-    case INSTR_ARITH:{
-      switch ((ArithModifier)mod)
-      {
-      case ARITH_ADD:
-        REG(a) = REG(b) + REG(c);
-        break;
-      case ARITH_SUB:
-        REG(a) = REG(b) - REG(c);
-        break;
-      case ARITH_MUL:
-        REG(a) = REG(b) * REG(c);
-        break;
-      case ARITH_DIV:
-        if(REG(c) == 0) emu->status = EMU_STATUS_DIV_BY_ZERO;
-        else REG(a) = REG(b) / REG(c);
-        break;
-      
-      default:
-        emu->status = EMU_STATUS_BAD_MOD;
-        break;
-      }
-    } break;
-
-    case INSTR_LOGIC:{
-      switch ((LogicModifier)mod)
-      {
-      case LOGIC_NOT:
-        REG(a) = ~REG(b);
-        break;
-      case LOGIC_AND:
-        REG(a) = REG(b) & REG(c);
-        break;
-      case LOGIC_OR:
-        REG(a) = REG(b) | REG(c);
-        break;
-      case LOGIC_XOR:
-        REG(a) = REG(b) ^ REG(c);
-        break;
-      default:
-        emu->status = EMU_STATUS_BAD_MOD;
-        break;
-      }
-    } break;
-
-    case INSTR_SHIFT:{
-      switch ((ShiftModifier)mod)
-      {
-      case SHIFT_LEFT:
-        REG(a) = REG(b) << REG(c);
-        break;
-      case SHIFT_RIGHT:
-        REG(a) = REG(b) >> REG(c);
-        break;
-      default:
-        emu->status = EMU_STATUS_BAD_MOD;
-        break;
-      }
-    }
-
-    case INSTR_STORE:{
-      switch ((StoreModifier)mod)
-      {
-      case STORE_REG_INDIRECT:
-        memoryWriteWord(emu, REG(a)+REG(b)+d, REG(c), &isAligned);
-        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      case STORE_REG_INDIRECT_PREINC:
-        memoryWriteWord(emu,(REG(a)+=(REG(b)+d)),REG(c),&isAligned);
-        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      case STORE_MEM_INDIRECT:
-        uint32_t address = memoryReadWord(emu,REG(a)+REG(b)+d,&isAligned);
-        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        memoryWriteWord(emu, address, REG(c), &isAligned);
-        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      default:
-        emu->status = EMU_STATUS_BAD_MOD;
-        break;
-      }
-
-    } break;
-
-    case INSTR_LOAD:{
-      switch ((LoadModifier)mod)
-      {
-      case LOAD_CSR:
-        if(b < CSR_COUNT) REG(a) = CSR(b);
-        else emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      case LOAD_REG_DISP:
-        REG(a) = REG(b) + d;
-        break;
-      case LOAD_MEM_INDIRECT:
-        REG(a) = memoryReadWord(emu,REG(b) + REG(c) + d,&isAligned);
-        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      case LOAD_MEM_INDIRECT_POSTINC:
-        REG(a) = memoryReadWord(emu,REG(b),&isAligned);
-        if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        REG(b) += d;
-        break;
-      case LOAD_CSR_FROM_REG:
-        if(a < CSR_COUNT) CSR(a) = REG(b);
-        else emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      case LOAD_CSR_OR_DISP:
-        if(a < CSR_COUNT && b < CSR_COUNT) CSR(a) = CSR(b)|d;
-        else emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      case LOAD_CSR_MEM_INDIRECT:
-        if(a < CSR_COUNT){        
-          CSR(a) = memoryReadWord(emu,REG(b)+REG(c)+d,&isAligned);
+          break;
+        case STORE_MEM_INDIRECT:
+          uint32_t address = memoryReadWord(emu,REG(a)+REG(b)+d,&isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-        }
-        else emu->status = EMU_STATUS_BUS_ERROR;
-        break;
-      case LOAD_CSR_MEM_POSTINC:
-        if(a < CSR_COUNT){        
-          CSR(a) = memoryReadWord(emu,REG(b),&isAligned);
+          memoryWriteWord(emu, address, REG(c), &isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
-          REG(b)+=d;
+          break;
+        default:
+          emu->status = EMU_STATUS_BAD_MOD;
+          break;
         }
-        else emu->status = EMU_STATUS_BUS_ERROR;
-        break;
 
-      default:
-        emu->status = EMU_STATUS_BAD_MOD;
-        break;
+      } break;
+
+      case INSTR_LOAD:{
+        switch ((LoadModifier)mod)
+        {
+        case LOAD_CSR:
+          if(b < CSR_COUNT) REG(a) = CSR(b);
+          else emu->status = EMU_STATUS_BUS_ERROR;
+          break;
+        case LOAD_REG_DISP:
+          REG(a) = REG(b) + d;
+          break;
+        case LOAD_MEM_INDIRECT:
+          REG(a) = memoryReadWord(emu,REG(b) + REG(c) + d,&isAligned);
+          if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+          break;
+        case LOAD_MEM_INDIRECT_POSTINC:
+          REG(a) = memoryReadWord(emu,REG(b),&isAligned);
+          if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+          REG(b) += d;
+          break;
+        case LOAD_CSR_FROM_REG:
+          if(a < CSR_COUNT) CSR(a) = REG(b);
+          else emu->status = EMU_STATUS_BUS_ERROR;
+          break;
+        case LOAD_CSR_OR_DISP:
+          if(a < CSR_COUNT && b < CSR_COUNT) CSR(a) = CSR(b)|d;
+          else emu->status = EMU_STATUS_BUS_ERROR;
+          break;
+        case LOAD_CSR_MEM_INDIRECT:
+          if(a < CSR_COUNT){        
+            CSR(a) = memoryReadWord(emu,REG(b)+REG(c)+d,&isAligned);
+            if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+          }
+          else emu->status = EMU_STATUS_BUS_ERROR;
+          break;
+        case LOAD_CSR_MEM_POSTINC:
+          if(a < CSR_COUNT){        
+            CSR(a) = memoryReadWord(emu,REG(b),&isAligned);
+            if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+            REG(b)+=d;
+          }
+          else emu->status = EMU_STATUS_BUS_ERROR;
+          break;
+
+        default:
+          emu->status = EMU_STATUS_BAD_MOD;
+          break;
+        }
+
+      } break;
+
+      default: {
+        emu->status = EMU_STATUS_BAD_OP;
+      } break;
       }
+      #if 1
+      static const char* instructionOpcodePrint[INSTR_COUNT] = {
+        [INSTR_HALT] = "INSTR_HALT",
+        [INSTR_INT] = "INSTR_INT",
+        [INSTR_CALL] = "INSTR_CALL",
+        [INSTR_JMP] = "INSTR_JMP",
+        [INSTR_XCHG] = "INSTR_XCHG",
+        [INSTR_ARITH] = "INSTR_ARITH",
+        [INSTR_LOGIC] = "INSTR_LOGIC",
+        [INSTR_SHIFT] = "INSTR_SHIFT",
+        [INSTR_STORE] = "INSTR_STORE",
+        [INSTR_LOAD] =  "INSTR_LOAD",      
+      };
+      printf("Instruction %s executed.\n", instructionOpcodePrint[opcode]);
+      /*for(size_t i = 0; i < 16; i++){
+        printf("r%-2lu = %08x ", i, REG(i));
+        if(i % 8 == 8 - 1) printf("\n");
+      }    
+      static const char *csr_names[CSR_COUNT] = {
+        [CSR_STATUS] = "Status",
+        [CSR_HANDLER] = "Handler",
+        [CSR_CAUSE] = "Cause",
+      };
 
-    } break;
+      for(size_t i = 0; i < CSR_COUNT; i++){
+        printf("%-8s = %08x           ", csr_names[i], CSR(i));
+      }
+      printf("\n");*/
 
-    default: {
-      emu->status = EMU_STATUS_BAD_OP;
-    } break;
+      #endif
     }
+    
 
-
-    #if 1
-    static const char* instructionOpcodePrint[INSTR_COUNT] = {
-      [INSTR_HALT] = "INSTR_HALT",
-      [INSTR_INT] = "INSTR_INT",
-      [INSTR_CALL] = "INSTR_CALL",
-      [INSTR_JMP] = "INSTR_JMP",
-      [INSTR_XCHG] = "INSTR_XCHG",
-      [INSTR_ARITH] = "INSTR_ARITH",
-      [INSTR_LOGIC] = "INSTR_LOGIC",
-      [INSTR_SHIFT] = "INSTR_SHIFT",
-      [INSTR_STORE] = "INSTR_STORE",
-      [INSTR_LOAD] =  "INSTR_LOAD",      
-    };
-    printf("Instruction %s executed.\n", instructionOpcodePrint[opcode]);
-    for(size_t i = 0; i < 16; i++){
-      printf("r%-2lu = %08x ", i, REG(i));
-      if(i % 8 == 8 - 1) printf("\n");
-    }
-
-    static const char *csr_names[CSR_COUNT] = {
-      [CSR_STATUS] = "Status",
-      [CSR_HANDLER] = "Handler",
-      [CSR_CAUSE] = "Cause",
-    };
-
-    for(size_t i = 0; i < CSR_COUNT; i++){
-      printf("%-8s = %08x           ", csr_names[i], CSR(i));
-    }
-    printf("\n");
-
-    #endif
 
     static const char *error_print[EMU_STATUS_COUNT] = {
       [EMU_STATUS_SOFTWARE_INTERRUPT] = "Software interrupt",
@@ -483,6 +512,12 @@ void emulatorRun(Emulator* emu){
     {
     case EMU_STATUS_SOFTWARE_INTERRUPT:
       emulatorRaiseExpection(emu, 4);
+      if(emu->status != EMU_STATUS_RUNNING){
+        printf("Unrecoverable exception: %s.\n", error_print[emu->status]);
+      }
+      break;
+    case EMU_STATUS_TIMER_INTERRUPT:
+      emulatorRaiseExpection(emu, 2);
       if(emu->status != EMU_STATUS_RUNNING){
         printf("Unrecoverable exception: %s.\n", error_print[emu->status]);
       }
@@ -508,8 +543,7 @@ void emulatorRun(Emulator* emu){
       break;
     }
   }
-
-  printf("Program executed sucessfully\n");
+  if(emu->status == EMU_STATUS_FINISHED)printf("Program executed sucessfully\n");
   emulatorPrint(emu);
 }
 

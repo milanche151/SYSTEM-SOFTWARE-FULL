@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 
 typedef unsigned char Byte;
 
@@ -17,6 +18,7 @@ typedef enum {
     EMU_STATUS_RUNNING,
     EMU_STATUS_FINISHED,
     EMU_STATUS_SOFTWARE_INTERRUPT,
+    EMU_STATUS_TIMER_INTERRUPT,
     EMU_STATUS_BUS_ERROR, /* when accessing misaligned memory */
     EMU_STATUS_BAD_OP,
     EMU_STATUS_BAD_MOD,
@@ -108,10 +110,17 @@ typedef Byte MemFrame [FRAME_SIZE];
 typedef MemFrame* pmt1[PMT1_SIZE];
 typedef pmt1* pmt2[PMT2_SIZE];
 
+typedef struct Timer{
+    time_t set_time;
+    time_t start_time;
+    time_t curr_time;
+}Timer;
+
 typedef struct Emulator{
     Processor cpu;
     pmt2 mem;
     Status status;
+    Timer timer;
 }Emulator;
 
 Emulator emulatorCreate();

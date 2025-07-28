@@ -5,7 +5,12 @@ main:
     ld $handler, %r1
     csrwr %r1, %handler
     int
-    div %r0, %r0
+    #div %r0, %r0   
+    ld $0x00f0000, %r3
+    ld $0x00000001,%r4
+loop: 
+    sub %r4,%r3
+    bne %r0, %r3,loop
     halt
 
 handler:
@@ -16,6 +21,8 @@ handler:
     beq %r1, %r2, hardware_intr
     ld $4, %r2
     beq %r1, %r2, software_intr
+    ld $2, %r2
+    beq %r1, %r2, timer_intr
     jmp handler_out
 
 software_intr:
@@ -24,6 +31,9 @@ software_intr:
 
 hardware_intr:
     ld $0xfeedbabe, %r11
+    jmp handler_out
+timer_intr:
+    add $1, %r12
     jmp handler_out
     
 handler_out:
