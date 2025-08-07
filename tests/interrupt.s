@@ -4,11 +4,20 @@ main:
     ld $0x20000000, %sp
     ld $handler, %r1
     csrwr %r1, %handler
+    csrrd %status,%r5
+    csrwr %r0, %status
+    ld $0x02, %r2
+    st %r2, 0xFFFFFF10
+    csrwr %r5,%status
     int
     #div %r0, %r0   
-    ld $0x00f0000, %r3
+    ld $0x0fffff0, %r3
     ld $0x00000001,%r4
 loop: 
+    sub %r4,%r3
+    add %r4,%r3
+    sub %r4,%r3
+    add %r4,%r3
     sub %r4,%r3
     bne %r0, %r3,loop
     halt
@@ -33,7 +42,8 @@ hardware_intr:
     ld $0xfeedbabe, %r11
     jmp handler_out
 timer_intr:
-    add $1, %r12
+    ld $1, %r13
+    add %r13, %r12
     jmp handler_out
     
 handler_out:

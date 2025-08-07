@@ -331,7 +331,7 @@ void ascii(struct Assembler* assembler, char* string){
 
     VecLinePush(&current_section->lines,line);
   }else{
-    printf("Directive placed outside of section.");
+    printf("Directive placed outside of section.\n");
     assembler->correct = false;
   }
 }
@@ -377,6 +377,7 @@ void instructionNoop(struct Assembler *assembler, InstrType instr_type){
     VecLinePush(&current_section->lines,line);
   }
   else{
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
   
@@ -389,6 +390,7 @@ void instructionRet(struct Assembler *assembler){
     insertGenericInstruction(assembler, 0x09, 0x03, REGISTER_PC, REGISTER_SP, 0, +STACK_DISP);
   }
   else {
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
@@ -402,6 +404,7 @@ void instructionIret(struct Assembler *assembler){
   }
 
   else {
+    printf("No sections defined.");
     assembler->correct = false;
   }
 }
@@ -431,6 +434,7 @@ void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int re
     VecLinePush(&current_section->lines,line);
   }
   else{
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
@@ -455,6 +459,7 @@ void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int re
     VecLinePush(&current_section->lines,line);
   }
   else{
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
@@ -546,10 +551,12 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
           insertGenericInstruction(assembler, desc->opcode, 0x02, regD, operand.reg, REGISTER_ZERO, operand.literal);
         }
         else {
+          printf("Literal can't fit 12bit size.\n");
           assembler->correct = false;
         }
         break;
       case OPERAND_TYPE_REGIND_SYM:
+        printf("LD REGIND SYM not allowed.\n");
         assembler->correct = false;
         break;
       default:assert(0);
@@ -559,6 +566,7 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
       switch(operand.type){
       case OPERAND_TYPE_IMMED_LIT:
       case OPERAND_TYPE_IMMED_SYM:
+        printf("STR IMMED SYM not allowed.\n");
         assembler->correct = false;
         break;
       case OPERAND_TYPE_MEMDIR_LIT:
@@ -568,6 +576,7 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
         insertGenericInstruction(assembler, desc->opcode, 0x02, REGISTER_PC, REGISTER_ZERO, regD, 0);
         break;
       case OPERAND_TYPE_REGDIR:
+        printf("STR REGDIR not allowed\n");
         assembler->correct = false;
         break;
       case OPERAND_TYPE_REGIND:
@@ -578,10 +587,12 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
           insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, operand.reg, regD, operand.literal);
         }
         else {
+          printf("Literal can't fit 12bit size.\n");
           assembler->correct = false;
         }
         break;
       case OPERAND_TYPE_REGIND_SYM:
+        printf("STR REGIND SYM not allowed.\n");
         assembler->correct = false;
         break;
       }
@@ -601,6 +612,7 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
     VecLinePush(&current_section->lines,line);
   }
   else {
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
@@ -621,6 +633,7 @@ void instructionCSRReadWrite(struct Assembler *assembler, InstrType instr_type, 
     else assert(0);
   }
   else {
+    printf("No sections defined.\n");
     assembler->correct = false;
 }
 }
@@ -670,6 +683,7 @@ void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1,
     };
     VecLinePush(&current_section->lines,line);
   }else{
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
@@ -885,6 +899,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           add_data32_reloc(assembler, currentSection, currentFR->offset, symbol);
         }
         else {
+          printf("Relocation error:forward ref is not a symbol.\n");
           assembler->correct = false;
         }
       }
@@ -901,6 +916,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           *third |= (dist)&(0xFF);
         }
         else {
+          printf("Literal can't fit 12bit size.\n");
           assembler->correct = false;
         }
       }
@@ -917,6 +933,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           *third |= (dist)&(0xFF);
         }
         else {
+          printf("Literal can't fit 12bit size.\n");
           assembler->correct = false;
         }
 
@@ -925,6 +942,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           add_data32_reloc(assembler, currentSection, currentSection->machineCode.size + currentFR->lit_idx * 4, symbol);
         }
         else {
+          printf("Relocation error:forward ref is not a symbol.\n");
           assembler->correct = false;
         }
       }

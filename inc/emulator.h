@@ -111,9 +111,9 @@ typedef MemFrame* pmt1[PMT1_SIZE];
 typedef pmt1* pmt2[PMT2_SIZE];
 
 typedef struct Timer{
-    time_t set_time;
-    time_t start_time;
-    time_t curr_time;
+    clock_t set_time;
+    clock_t start_time;
+    clock_t curr_time;
 }Timer;
 
 typedef struct Emulator{

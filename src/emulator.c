@@ -102,11 +102,9 @@ static void memoryWriteWord(Emulator *emu, uint32_t addr, uint32_t word,bool* is
   
 }
 void tick(Emulator* emu){
-  struct timespec now;
-  timespec_get(&now, TIME_UTC);
-  emu->timer.curr_time = ((int64_t) now.tv_sec) * 1000 + ((int64_t) now.tv_nsec) / 1000000;
-  time_t timedif = emu->timer.curr_time - emu->timer.start_time;
-    printf("Timer : %lu\n", timedif);
+  emu->timer.curr_time=clock();
+  double timedif = (double)(1000*(emu->timer.curr_time - emu->timer.start_time))/ CLOCKS_PER_SEC;
+  //printf("Timer : %lu\n", timedif);
   if(timedif >= emu->timer.set_time){
     emu->status = EMU_STATUS_TIMER_INTERRUPT;
     emu->timer.start_time = emu->timer.curr_time;
@@ -195,6 +193,7 @@ static void emulatorPrint(const Emulator* emu){
     printf("r%-2lu = %08x\n",i,emu->cpu.reg[i]);
   }
   printf("\n");
+  printf("Timer Period:%ld miliseconds\n",emu->timer.set_time);
 }
 
 static void emulatorRaiseExpection(Emulator *emu, int cause){
@@ -223,10 +222,8 @@ static void emulatorRaiseExpection(Emulator *emu, int cause){
 
 void emulatorRun(Emulator* emu){
   bool isAligned = true;
-  struct timespec now;
   emu->timer.set_time = 500;
-  timespec_get(&now, TIME_UTC);
-  emu->timer.start_time = ((int64_t) now.tv_sec) * 1000 + ((int64_t) now.tv_nsec) / 1000000;
+  emu->timer.start_time = clock();
   emu->timer.curr_time = emu->timer.start_time;
   memoryWriteWord(emu,TIM_CFG_ADDR,0,&isAligned);
   while(emu->status == EMU_STATUS_RUNNING){
@@ -479,7 +476,7 @@ void emulatorRun(Emulator* emu){
         [INSTR_STORE] = "INSTR_STORE",
         [INSTR_LOAD] =  "INSTR_LOAD",      
       };
-      printf("Instruction %s executed.\n", instructionOpcodePrint[opcode]);
+      //printf("Instruction %s executed.\n", instructionOpcodePrint[opcode]);
       /*for(size_t i = 0; i < 16; i++){
         printf("r%-2lu = %08x ", i, REG(i));
         if(i % 8 == 8 - 1) printf("\n");
