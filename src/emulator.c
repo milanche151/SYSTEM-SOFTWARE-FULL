@@ -287,7 +287,7 @@ check_stdin(Emulator *emu){
   //printf("TERMIN\n");
 
   if(c != 0){
-    printf("TERMIN READ %d\n", c);
+    // printf("TERMIN READ %d\n\n", c);
     fflush(stdout);
     bool isAligned = true;
     memoryWriteWord(emu, TERM_IN_ADDR, c, &isAligned);
@@ -349,13 +349,13 @@ void emulatorRun(Emulator* emu){
         {
         case CALL_REG_INDIRECT:
           REG(REG_SP) -= 4;
-          memoryWriteWord(emu, REG(REG_SP), REG_PC, &isAligned);
+          memoryWriteWord(emu, REG(REG_SP), REG(REG_PC), &isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
           REG(REG_PC) = REG(a)+REG(b)+d;
           break;
         case CALL_MEM_INDIRECT:
           REG(REG_SP) -= 4;
-          memoryWriteWord(emu, REG(REG_SP), REG_PC, &isAligned);
+          memoryWriteWord(emu, REG(REG_SP), REG(REG_PC), &isAligned);
           REG(REG_PC) = memoryReadWord(emu,REG(a)+REG(b)+d,&isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
           break;
@@ -552,7 +552,7 @@ void emulatorRun(Emulator* emu){
       } break;
       }
       
-      #define EMULATOR_STEP_DEBUG
+      // #define EMULATOR_STEP_DEBUG
 
       #ifdef EMULATOR_STEP_DEBUG
       static const char* instructionOpcodePrint[INSTR_COUNT] = {
@@ -583,6 +583,12 @@ void emulatorRun(Emulator* emu){
         printf("%-8s = %08x           ", csr_names[i], CSR(i));
       }
       printf("\n");
+
+      if(opcode == INSTR_CALL){
+        bool isAligned = true;
+        printf("Call address to stack = %08x\n", memoryReadWord(emu, REG(REG_SP), &isAligned));
+      }
+
       #endif
 
       if(emu->status == EMU_STATUS_RUNNING){
@@ -643,7 +649,7 @@ void emulatorRun(Emulator* emu){
       break;
     }
 
-    usleep(1000000);
+    // usleep(100000 * 5);
   }
   if(emu->status == EMU_STATUS_FINISHED)printf("\nProgram executed sucessfully\n");
   emulatorPrint(emu);
