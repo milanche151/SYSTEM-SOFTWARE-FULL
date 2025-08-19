@@ -4,7 +4,7 @@
 
 .section my_code
 my_start:
-    ld $0xFFFFFEFE, %sp
+    ld $0xFFFFFEFC, %sp
     ld $handler, %r1
     csrwr %r1, %handler
     

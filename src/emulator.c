@@ -5,7 +5,9 @@
 #define START_PC 0x40000000
 #define REG_PC 15
 #define REG_SP 14
-#define TIM_CFG_ADDR 0xFFFFFF10
+#define TIM_CFG_ADDR  0xFFFFFF10
+#define TERM_IN_ADDR  0xFFFFFF04
+#define TERM_OUT_ADDR 0xFFFFFF00
 
 typedef enum csr_reg {
   CSR_STATUS,
@@ -14,8 +16,6 @@ typedef enum csr_reg {
 
   CSR_COUNT,
 } csr_reg;
-
-
 
 Emulator emulatorCreate(){
   Emulator em = { 0 };
@@ -220,6 +220,30 @@ static void emulatorRaiseExpection(Emulator *emu, int cause){
   }
 }
 
+static void
+check_stdin(Emulator *emu){
+  unsigned c = getc(stdin);
+  if(c != EOF){
+    bool isAligned = true;
+    memoryWriteWord(emu, TERM_IN_ADDR, c, &isAligned);
+    assert(isAligned);
+    emu->status = EMU_STATUS_TERM_IN_INTERRUPT;
+  }
+}
+
+static void
+check_stdout(Emulator *emu){
+  bool isAligned = true;
+  unsigned val = memoryReadWord(emu, TERM_OUT_ADDR, &isAligned);
+  assert(isAligned);
+
+  if(val != 0){
+    printf("%c", val);
+    memoryWriteWord(emu, TERM_OUT_ADDR, 0, &isAligned);
+    assert(isAligned);
+  }
+}
+
 void emulatorRun(Emulator* emu){
   bool isAligned = true;
   emu->timer.set_time = 500;
@@ -242,6 +266,8 @@ void emulatorRun(Emulator* emu){
 
     ADVANCE_PC();
     tick(emu);
+    // check_stdin(emu);
+    check_stdout(emu);
     
     assert(opcode < 0x10 && mod < 0x10 && a < 0x10 && b < 0x10 && c < 0x10
       && (d >= -0x800 || d < 0x800));
@@ -463,7 +489,10 @@ void emulatorRun(Emulator* emu){
         emu->status = EMU_STATUS_BAD_OP;
       } break;
       }
-      #if 1
+      
+      // #define EMULATOR_STEP_DEBUG
+
+      #ifdef EMULATOR_STEP_DEBUG
       static const char* instructionOpcodePrint[INSTR_COUNT] = {
         [INSTR_HALT] = "INSTR_HALT",
         [INSTR_INT] = "INSTR_INT",
@@ -476,8 +505,9 @@ void emulatorRun(Emulator* emu){
         [INSTR_STORE] = "INSTR_STORE",
         [INSTR_LOAD] =  "INSTR_LOAD",      
       };
-      //printf("Instruction %s executed.\n", instructionOpcodePrint[opcode]);
-      /*for(size_t i = 0; i < 16; i++){
+      
+      printf("Instruction %s executed.\n", instructionOpcodePrint[opcode]);
+      for(size_t i = 0; i < 16; i++){
         printf("r%-2lu = %08x ", i, REG(i));
         if(i % 8 == 8 - 1) printf("\n");
       }    
@@ -490,8 +520,7 @@ void emulatorRun(Emulator* emu){
       for(size_t i = 0; i < CSR_COUNT; i++){
         printf("%-8s = %08x           ", csr_names[i], CSR(i));
       }
-      printf("\n");*/
-
+      printf("\n");
       #endif
     }
     
@@ -499,6 +528,8 @@ void emulatorRun(Emulator* emu){
 
     static const char *error_print[EMU_STATUS_COUNT] = {
       [EMU_STATUS_SOFTWARE_INTERRUPT] = "Software interrupt",
+      [EMU_STATUS_TERM_IN_INTERRUPT] = "Terminal In interrupt",
+      [EMU_STATUS_TIMER_INTERRUPT] = "Timer interrupt",
       [EMU_STATUS_BAD_MOD] = "Bad mod",
       [EMU_STATUS_BAD_OP] = "Bad op",
       [EMU_STATUS_BUS_ERROR] = "Bus error",
@@ -509,6 +540,12 @@ void emulatorRun(Emulator* emu){
     {
     case EMU_STATUS_SOFTWARE_INTERRUPT:
       emulatorRaiseExpection(emu, 4);
+      if(emu->status != EMU_STATUS_RUNNING){
+        printf("Unrecoverable exception: %s.\n", error_print[emu->status]);
+      }
+      break;
+    case EMU_STATUS_TERM_IN_INTERRUPT:
+      emulatorRaiseExpection(emu, 3);
       if(emu->status != EMU_STATUS_RUNNING){
         printf("Unrecoverable exception: %s.\n", error_print[emu->status]);
       }

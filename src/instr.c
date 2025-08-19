@@ -24,7 +24,7 @@ InstrDesc instr_descs[INSTR_TYPE_COUNT] = {
   [INSTR_CALL] = {
     .family = INSTR_FAMILY_TWOREG_ONEOP,
     .opcode = 0x02,
-    .modifier = 0x00,
+    .modifier = 0x01,
     .name = "call",
   },
   [INSTR_JMP] = {
