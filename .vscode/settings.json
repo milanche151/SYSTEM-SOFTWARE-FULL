@@ -17,6 +17,7 @@
     "emulator.h": "c",
     "stdlib.h": "c",
     "instr.h": "c",
-    "stdbool.h": "c"
+    "stdbool.h": "c",
+    "time.h": "c"
   }
 }

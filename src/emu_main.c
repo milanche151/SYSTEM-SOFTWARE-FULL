@@ -25,8 +25,11 @@ static void enable_raw_mode() {
 
   raw = orig_termios;
 
-  // Disable canonical mode, echoing, signals
-  raw.c_lflag &= ~(ECHO | ICANON | ISIG);
+  printf("ORIG TERMIOS = %x\n", raw.c_lflag);
+
+  // Disable canonical mode, echoing
+  // raw.c_lflag &= ~(ECHO | ICANON | ISIG);
+  raw.c_lflag &= ~(ECHO | ICANON);
   raw.c_cc[VMIN] = 0;  // No minimum number of characters
   raw.c_cc[VTIME] = 0; // No timeout (0 deciseconds)
 

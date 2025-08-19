@@ -27,6 +27,8 @@ typedef enum {
     EMU_STATUS_COUNT
 }Status;
 
+#define STATUS_TERM_IN_BIT (1 << 0)
+#define STATUS_TIMER_BIT (1 << 1)
 #define STATUS_INTERRUPT_BIT (1 << 2)
 
 // Instruction type (1st byte)

@@ -1,6 +1,7 @@
 #include "emulator.h"
 #include "util.h"
 #include <assert.h>
+#include <unistd.h>
 
 #define START_PC 0x40000000
 #define REG_PC 15
@@ -141,6 +142,8 @@ static void memoryWriteWord(Emulator *emu, uint32_t addr, uint32_t word,bool* is
 #endif
 
 void tick(Emulator* emu){
+  return;
+
   emu->timer.curr_time=clock();
   double timedif = (double)(1000*(emu->timer.curr_time - emu->timer.start_time))/ CLOCKS_PER_SEC;
   //printf("Timer : %lu\n", timedif);
@@ -237,7 +240,24 @@ static void emulatorPrint(const Emulator* emu){
 
 static void emulatorRaiseExpection(Emulator *emu, int cause){
   // can't handle exception if already inside interrupt routine
-  if(CSR(CSR_STATUS) & STATUS_INTERRUPT_BIT != 0) {
+  // or if specific periphery is masked
+  if(
+    CSR(CSR_STATUS) & STATUS_INTERRUPT_BIT != 0
+    || (emu->status == EMU_STATUS_TIMER_INTERRUPT && (CSR(CSR_STATUS) & STATUS_TIMER_BIT))
+    || (emu->status == EMU_STATUS_TERM_IN_INTERRUPT && (CSR(CSR_STATUS) & STATUS_TERM_IN_BIT))
+  ) {
+    switch(emu->status){
+    // if this is a software or periphery exception, it can't be handled but this is not an error
+    case EMU_STATUS_SOFTWARE_INTERRUPT:
+    case EMU_STATUS_TERM_IN_INTERRUPT:
+    case EMU_STATUS_TIMER_INTERRUPT:
+      emu->status = EMU_STATUS_RUNNING;
+      break;
+    // if this is hardware interrupt (badop, bus error, ...) it should stop emulation
+    default:
+      break;
+    }
+
     return;
   }
 
@@ -260,9 +280,15 @@ static void emulatorRaiseExpection(Emulator *emu, int cause){
 }
 
 static void
-check_stdin(Emulator *emu){
-  unsigned c = getc(stdin);
-  if(c != EOF){
+check_stdin(Emulator *emu){  
+  int c = 0;
+  int nread = read(STDIN_FILENO, &c, 1);
+  
+  //printf("TERMIN\n");
+
+  if(c != 0){
+    printf("TERMIN READ %d\n", c);
+    fflush(stdout);
     bool isAligned = true;
     memoryWriteWord(emu, TERM_IN_ADDR, c, &isAligned);
     assert(isAligned);
@@ -304,9 +330,6 @@ void emulatorRun(Emulator* emu){
     uint32_t d      = ((int32_t)instr << 20) >> 20;
 
     ADVANCE_PC();
-    tick(emu);
-    // check_stdin(emu);
-    check_stdout(emu);
     
     assert(opcode < 0x10 && mod < 0x10 && a < 0x10 && b < 0x10 && c < 0x10
       && (d >= -0x800 || d < 0x800));
@@ -529,7 +552,7 @@ void emulatorRun(Emulator* emu){
       } break;
       }
       
-      // #define EMULATOR_STEP_DEBUG
+      #define EMULATOR_STEP_DEBUG
 
       #ifdef EMULATOR_STEP_DEBUG
       static const char* instructionOpcodePrint[INSTR_COUNT] = {
@@ -561,9 +584,13 @@ void emulatorRun(Emulator* emu){
       }
       printf("\n");
       #endif
-    }
-    
 
+      if(emu->status == EMU_STATUS_RUNNING){
+        tick(emu);
+        check_stdin(emu);
+        check_stdout(emu);
+      }
+    }
 
     static const char *error_print[EMU_STATUS_COUNT] = {
       [EMU_STATUS_SOFTWARE_INTERRUPT] = "Software interrupt",
@@ -615,6 +642,8 @@ void emulatorRun(Emulator* emu){
       assert(0);
       break;
     }
+
+    usleep(1000000);
   }
   if(emu->status == EMU_STATUS_FINISHED)printf("\nProgram executed sucessfully\n");
   emulatorPrint(emu);
