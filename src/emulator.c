@@ -65,6 +65,9 @@ static Byte*  getMemoryAddr(Emulator* emu, uint32_t addr){
   return &(*curr_memframe)[frame_offset];
 }
 
+// #define REQUIRE_ALIGNED_ADDRESS
+
+#ifdef REQUIRE_ALIGNED_ADDRESS
 static uint32_t memoryReadWord(Emulator *emu, uint32_t addr, bool* isAligned){
   *isAligned = *isAligned && addr % 4 == 0;
   if(!*isAligned) return 0;  /* don't care about the value */
@@ -99,8 +102,44 @@ static void memoryWriteWord(Emulator *emu, uint32_t addr, uint32_t word,bool* is
     *getMemoryAddr(emu,addr+i) = word;
     word >>= 8;
   }
-  
 }
+
+#else
+static uint32_t memoryReadWord(Emulator *emu, uint32_t addr, bool* isAligned){
+  (void)isAligned; // suppress warnings
+
+  uint32_t word = 0;
+  for (size_t i = 4; i-->0 ;){
+    word = word<<8 | *getMemoryAddr(emu,addr+i);
+  }
+  return word;
+}
+
+static uint32_t memoryReadWordBigEndian(Emulator *emu, uint32_t addr, bool* isAligned){
+  (void)isAligned; // suppress warnings
+
+  uint32_t word = 0;
+  for (size_t i = 0; i < 4; i++){
+    word = word<<8 | *getMemoryAddr(emu,addr+i);
+  }
+  return word;
+}
+
+static void memoryWriteWord(Emulator *emu, uint32_t addr, uint32_t word,bool* isAligned){
+  (void)isAligned; // suppress warnings
+
+  if(addr == TIM_CFG_ADDR && word < 0x8){
+    emu->timer.set_time = (word + 1)*500; 
+  }
+
+  for (size_t i = 0; i < 4; i++){
+    *getMemoryAddr(emu,addr+i) = word;
+    word >>= 8;
+  }
+}
+
+#endif
+
 void tick(Emulator* emu){
   emu->timer.curr_time=clock();
   double timedif = (double)(1000*(emu->timer.curr_time - emu->timer.start_time))/ CLOCKS_PER_SEC;
@@ -238,7 +277,7 @@ check_stdout(Emulator *emu){
   assert(isAligned);
 
   if(val != 0){
-    printf("%c", val);
+    printf("%c", val & 0xff);
     memoryWriteWord(emu, TERM_OUT_ADDR, 0, &isAligned);
     assert(isAligned);
   }
@@ -577,7 +616,7 @@ void emulatorRun(Emulator* emu){
       break;
     }
   }
-  if(emu->status == EMU_STATUS_FINISHED)printf("Program executed sucessfully\n");
+  if(emu->status == EMU_STATUS_FINISHED)printf("\nProgram executed sucessfully\n");
   emulatorPrint(emu);
 }
 
