@@ -316,8 +316,25 @@ void ascii(struct Assembler* assembler, char* string){
         .string = string,
       },
     };
+    
+    bool has_escape = false;
     for(char *p = string; *p != 0; p++){
-      if(*p != '"') VecBytePush(&current_section->machineCode, *p);
+      if(*p == '\\') {
+        has_escape = true;
+      }
+      else if(*p != '"') {
+        if(has_escape){
+          assert(*p == 'n');
+          VecBytePush(&current_section->machineCode, '\n');
+        }
+        else {
+          VecBytePush(&current_section->machineCode, *p);
+        }
+        has_escape = false;
+      }
+      else {
+        // nothing
+      }
     }
     VecBytePush(&current_section->machineCode, 0);
     

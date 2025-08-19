@@ -56,7 +56,7 @@ csrwr {return CSRWR;}
 : {return ':' ;}
 , {yylval.string=strdup(yytext);return ',' ;}
 [a-zA-Z_][a-zA-Z_0-9]* {yylval.string=strdup(yytext);return SYMBOL;}
-\"[a-zA-Z_0-9]*\" { yylval.string=strdup(yytext); return STRING; }
+\"([a-zA-Z_0-9 ]|"\\n")*\" { yylval.string=strdup(yytext); return STRING; }
 "$" {return '$';}
 [0][x][A-Fa-f0-9]+ {sscanf(yytext,"%x",&yylval.number);return NUM;}
 "%sp" { yylval.number=14; return REG; }
