@@ -398,9 +398,8 @@ void instructionRet(struct Assembler *assembler){
 void instructionIret(struct Assembler *assembler){
   if(assembler->sections.size > 0){
 
-    insertGenericInstruction(assembler, 0x09, 0x01, REGISTER_SP, REGISTER_SP, 0, 2 * STACK_DISP);
-    insertGenericInstruction(assembler, 0x09, 0x06, REGISTER_CSR_STATUS, REGISTER_SP, REGISTER_ZERO, -1 * STACK_DISP);
-    insertGenericInstruction(assembler, 0x09, 0x02, REGISTER_PC, REGISTER_SP, REGISTER_ZERO, -2 * STACK_DISP);
+    insertGenericInstruction(assembler, 0x09, 0x06, REGISTER_CSR_STATUS, REGISTER_SP, REGISTER_ZERO, +1 * STACK_DISP);
+    insertGenericInstruction(assembler, 0x09, 0x03, REGISTER_PC, REGISTER_SP, REGISTER_ZERO, +2 * STACK_DISP);
   }
 
   else {
