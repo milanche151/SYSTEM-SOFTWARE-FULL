@@ -25,11 +25,13 @@ extern struct Assembler *assembler;
   InstrType instrType;
   Operand operand;
   Expression expr;
+  symTableType type;
 }
 
 %debug
 
-%token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR
+%token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR 
+%token FUNC OBJ TYPE
 %token<string> SYMBOL
 %token<string> STRING
 %type<stringvec> SYMLIST
@@ -43,6 +45,7 @@ extern struct Assembler *assembler;
 %type<instrType> jmp_opcode
 %type<operand> operand
 %type<operand> jmp_operand
+%type<type> type
 
 %%
 program:
@@ -73,6 +76,10 @@ directive:
     global(assembler,$2);
   }
   |
+  TYPE SYMBOL type {
+    type(assembler,$2,$3);
+  }
+  |
   WORD EXPR_LIST {
     word(assembler,$2);
   }
@@ -96,6 +103,11 @@ directive:
   }
   ;
 
+type:
+  FUNC { $$ = SYM_TBL_TYPE_FUNCTION;}
+  |
+  OBJ { $$ = SYM_TBL_TYPE_OBJECT; }
+  ;
 equ_expr
   : equ_expr '+' equ_primary {
     Expression add = {

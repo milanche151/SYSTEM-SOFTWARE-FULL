@@ -11,10 +11,12 @@ int curr_line = 1;
 %%
 [ \t];
 
-
+"FUNC" {return FUNC;}
+"OBJ" {return OBJ;}
 ".global" {return GLOBAL;}
 ".extern" {return EXTERN;}
 ".section" {return SECTION;}
+".type" {return TYPE;}
 ".word" {return WORD;}
 ".skip" {return SKIP;}
 ".equ" {return EQU;}

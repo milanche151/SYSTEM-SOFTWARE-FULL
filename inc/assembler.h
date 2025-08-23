@@ -177,6 +177,7 @@ void initSymbolTable(struct Assembler* assembler);
 //_________________________________________directives____________________________________________________
 void section(struct Assembler* assembler, char* symbol);
 void global(struct Assembler* assembler, VecString symlist);
+void type(struct Assembler* assembler, char* sym, symTableType type);
 void word(struct Assembler* assembler, VecExpr expresions);
 void ascii(struct Assembler* assembler, char* string);
 void externSym(struct Assembler* assembler, VecString symlist);

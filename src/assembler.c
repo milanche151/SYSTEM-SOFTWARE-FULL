@@ -13,6 +13,19 @@ VECTOR_IMPLEMENT(VecLine,Line);
 VECTOR_IMPLEMENT(VecByte, unsigned char);
 VECTOR_IMPLEMENT(VecEquExpr, EquExpr);
 
+static const char *symbol_type_print[SYM_TBL_TYPE_COUNT] = {
+  [SYM_TBL_TYPE_NOTYPE]   = "NoType",
+  [SYM_TBL_TYPE_FILE_T]   = "File",
+  [SYM_TBL_TYPE_SECTION]  = "Section",
+  [SYM_TBL_TYPE_OBJECT]   = "Object",
+  [SYM_TBL_TYPE_FUNCTION] = "Function",
+};
+
+static const char *symbol_bind_print[BIND_TYPE_COUNT] = {
+  [BIND_TYPE_LOCAL] = "LOCAL",
+  [BIND_TYPE_GLOBAL] = "GLOBAL",
+};
+
 void insertSymSection(struct Assembler* assembler, char* name){
   SymTableRow* found = NULL;
   for(size_t i = 0; i < assembler->symbolTable.size; i++){
@@ -157,8 +170,16 @@ void insertSymExtern(struct Assembler* assembler, char *name){
   }
   
   if(found != NULL){
-    printf("ERROR: Extern symbol already defined.\n");
-    assembler->correct = false;
+    if(found->bind == BIND_TYPE_GLOBAL || found->defined){
+      printf("ERROR: Extern symbol already defined.\n");
+      assembler->correct = false;
+    }
+    else{
+      found->section = EXTERN_SECTION;
+      found->value = 0;
+      found->defined = true;
+    }
+    
   }
   else {
     VecSymTblPush(
@@ -236,20 +257,6 @@ void initSymbolTable(struct Assembler* assembler){
 }
 
 void printSymTable(const struct Assembler* assembler){
-
-  const char *symbol_type_print[SYM_TBL_TYPE_COUNT] = {
-    [SYM_TBL_TYPE_NOTYPE]   = "NoType",
-    [SYM_TBL_TYPE_FILE_T]   = "File",
-    [SYM_TBL_TYPE_SECTION]  = "Section",
-    [SYM_TBL_TYPE_OBJECT]   = "Object",
-    [SYM_TBL_TYPE_FUNCTION] = "Function",
-  };
-
-  const char *symbol_bind_print[BIND_TYPE_COUNT] = {
-    [BIND_TYPE_LOCAL] = "LOCAL",
-    [BIND_TYPE_GLOBAL] = "GLOBAL",
-  };
-
   printf("Symtab:\n");
   printf("%-5s %-10s %-10s %-10s %-10s %-10s %-10s\n",
     "Num",
@@ -294,6 +301,44 @@ void global(struct Assembler* assembler, VecString symlist){
  for(int i = 0; i < symlist.size; i++){
     declareSymGlobal(assembler, symlist.data[i]);
  }
+}
+
+void type(struct Assembler* assembler, char* sym, symTableType type){
+  SymTableRow* found = NULL;
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
+    SymTableRow* current = &assembler->symbolTable.data[i];
+
+    if(strcmp(current->name, sym) == 0) {
+      found = current;
+      break;
+    }
+  }
+
+  if(found != NULL){
+    //  symbol already has type
+    if(found->type != SYM_TBL_TYPE_NOTYPE){
+      printf("ERROR:Symbol can't be declared as %s, already has type.\n",symbol_type_print[type]);
+      assembler->correct = false;
+    }
+    // okay
+    else {
+      found->type = type;
+    }
+  }
+  else {
+
+    VecSymTblPush(
+      &assembler->symbolTable,
+      (SymTableRow){
+        .name = sym,
+        .section = 0,
+        .value = 0,
+        .type = type,
+        .defined = false,
+        .bind = BIND_TYPE_LOCAL
+      }
+    );
+  }
 }
 
 static void

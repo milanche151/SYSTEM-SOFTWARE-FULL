@@ -97,11 +97,14 @@ extern int yydebug;
     ST = 291,                      /* ST  */
     CSRRD = 292,                   /* CSRRD  */
     CSRWR = 293,                   /* CSRWR  */
-    SYMBOL = 294,                  /* SYMBOL  */
-    STRING = 295,                  /* STRING  */
-    NUM = 296,                     /* NUM  */
-    REG = 297,                     /* REG  */
-    SREG = 298                     /* SREG  */
+    FUNC = 294,                    /* FUNC  */
+    OBJ = 295,                     /* OBJ  */
+    TYPE = 296,                    /* TYPE  */
+    SYMBOL = 297,                  /* SYMBOL  */
+    STRING = 298,                  /* STRING  */
+    NUM = 299,                     /* NUM  */
+    REG = 300,                     /* REG  */
+    SREG = 301                     /* SREG  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -119,8 +122,9 @@ union YYSTYPE
   InstrType instrType;
   Operand operand;
   Expression expr;
+  symTableType type;
 
-#line 124 "inc/parser.tab.h"
+#line 128 "inc/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
