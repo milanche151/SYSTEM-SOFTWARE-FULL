@@ -87,24 +87,25 @@ extern int yydebug;
     SUB = 281,                     /* SUB  */
     MUL = 282,                     /* MUL  */
     DIV = 283,                     /* DIV  */
-    NOT = 284,                     /* NOT  */
-    AND = 285,                     /* AND  */
-    OR = 286,                      /* OR  */
-    XOR = 287,                     /* XOR  */
-    SHL = 288,                     /* SHL  */
-    SHR = 289,                     /* SHR  */
-    LD = 290,                      /* LD  */
-    ST = 291,                      /* ST  */
-    CSRRD = 292,                   /* CSRRD  */
-    CSRWR = 293,                   /* CSRWR  */
-    FUNC = 294,                    /* FUNC  */
-    OBJ = 295,                     /* OBJ  */
-    TYPE = 296,                    /* TYPE  */
-    SYMBOL = 297,                  /* SYMBOL  */
-    STRING = 298,                  /* STRING  */
-    NUM = 299,                     /* NUM  */
-    REG = 300,                     /* REG  */
-    SREG = 301                     /* SREG  */
+    MOD = 284,                     /* MOD  */
+    NOT = 285,                     /* NOT  */
+    AND = 286,                     /* AND  */
+    OR = 287,                      /* OR  */
+    XOR = 288,                     /* XOR  */
+    SHL = 289,                     /* SHL  */
+    SHR = 290,                     /* SHR  */
+    LD = 291,                      /* LD  */
+    ST = 292,                      /* ST  */
+    CSRRD = 293,                   /* CSRRD  */
+    CSRWR = 294,                   /* CSRWR  */
+    FUNC = 295,                    /* FUNC  */
+    OBJ = 296,                     /* OBJ  */
+    TYPE = 297,                    /* TYPE  */
+    SYMBOL = 298,                  /* SYMBOL  */
+    STRING = 299,                  /* STRING  */
+    NUM = 300,                     /* NUM  */
+    REG = 301,                     /* REG  */
+    SREG = 302                     /* SREG  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -124,7 +125,7 @@ union YYSTYPE
   Expression expr;
   symTableType type;
 
-#line 128 "inc/parser.tab.h"
+#line 129 "inc/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

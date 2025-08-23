@@ -69,7 +69,8 @@ typedef enum {
     ARITH_ADD = 0x0,           // gpr[A]<=gpr[B] + gpr[C];
     ARITH_SUB = 0x1,           // gpr[A]<=gpr[B] - gpr[C];
     ARITH_MUL = 0x2,           // gpr[A]<=gpr[B] * gpr[C];
-    ARITH_DIV = 0x3            // gpr[A]<=gpr[B] / gpr[C];
+    ARITH_DIV = 0x3,           // gpr[A]<=gpr[B] / gpr[C];
+    ARITH_MOD = 0x4,           // gpr[A]<=gpr[B] % gpr[C];
 } ArithModifier;
 
 // Modifiers for logic operations

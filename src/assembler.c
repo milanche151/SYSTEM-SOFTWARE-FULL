@@ -1146,7 +1146,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           add_data32_reloc(assembler, currentSection, currentFR->offset, symbol);
         }
         else {
-          printf("Relocation error:forward ref is not a symbol.\n");
+          printf("Relocation error:forward ref %s is not a symbol.\n", currentFR->name);
           assembler->correct = false;
         }
       }
@@ -1189,7 +1189,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           add_data32_reloc(assembler, currentSection, currentSection->machineCode.size + currentFR->lit_idx * 4, symbol);
         }
         else {
-          printf("Relocation error:forward ref is not a symbol.\n");
+          printf("Relocation error:forward ref %s is not a symbol.\n", currentFR->name);
           assembler->correct = false;
         }
       }

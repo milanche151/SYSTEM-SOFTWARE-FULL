@@ -38,6 +38,7 @@ add {return ADD;}
 sub {return SUB;}
 mul {return MUL;}
 div {return DIV;}
+mod {return MOD;}
 not {return NOT;}
 and {return AND;}
 or {return OR;}

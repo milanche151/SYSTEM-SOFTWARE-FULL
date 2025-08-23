@@ -23,6 +23,7 @@ typedef enum {
   INSTR_SUB,
   INSTR_MUL,
   INSTR_DIV,
+  INSTR_MOD,
   INSTR_AND,
   INSTR_OR,
   INSTR_XOR,

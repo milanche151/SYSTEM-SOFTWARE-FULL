@@ -93,6 +93,12 @@ InstrDesc instr_descs[INSTR_TYPE_COUNT] = {
     .modifier = 0x3,
     .name = "div",
   },
+  [INSTR_MOD] = {
+    .family = INSTR_FAMILY_TWOREG,
+    .opcode = 0x5,
+    .modifier = 0x4,
+    .name = "mod",
+  },
   [INSTR_NOT] = {
     .family = INSTR_FAMILY_ONEREG,
     .opcode = 0x6,

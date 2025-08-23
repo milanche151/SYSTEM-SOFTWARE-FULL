@@ -142,10 +142,8 @@ static void memoryWriteWord(Emulator *emu, uint32_t addr, uint32_t word,bool* is
 #endif
 
 void tick(Emulator* emu){
-  return;
-
   emu->timer.curr_time=clock();
-  double timedif = (double)(1000*(emu->timer.curr_time - emu->timer.start_time))/ CLOCKS_PER_SEC;
+  double timedif = (double)(10000*(emu->timer.curr_time - emu->timer.start_time))/ CLOCKS_PER_SEC;
   //printf("Timer : %lu\n", timedif);
   if(timedif >= emu->timer.set_time){
     emu->status = EMU_STATUS_TIMER_INTERRUPT;
@@ -430,6 +428,10 @@ void emulatorRun(Emulator* emu){
           if(REG(c) == 0) emu->status = EMU_STATUS_DIV_BY_ZERO;
           else REG(a) = REG(b) / REG(c);
           break;
+        case ARITH_MOD:
+          if(REG(c) == 0) emu->status = EMU_STATUS_DIV_BY_ZERO;
+          else REG(a) = REG(b) % REG(c);
+          break;
         
         default:
           emu->status = EMU_STATUS_BAD_MOD;
@@ -649,7 +651,9 @@ void emulatorRun(Emulator* emu){
       break;
     }
 
-    // usleep(100000 * 5);
+    #ifdef EMULATOR_STEP_DEBUG
+    usleep(100000 * 2.5);
+    #endif
   }
   if(emu->status == EMU_STATUS_FINISHED)printf("\nProgram executed sucessfully\n");
   emulatorPrint(emu);
