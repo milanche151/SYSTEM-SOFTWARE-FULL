@@ -80,12 +80,15 @@ VECTOR_DECLARE(VecSymTbl,SymTableRow);
 typedef enum ExprType{
   EXPR_TYPE_SYMBOL,
   EXPR_TYPE_NUMBER,
+  EXPR_TYPE_ADD,
+  EXPR_TYPE_SUB
 } ExpressionType;
 
 typedef struct Expression{
   ExpressionType type;
   CORE_ADDR val;
   char* name;
+  struct Expression *op1, *op2;
 } Expression;
 
 VECTOR_DECLARE(VecExpr, Expression);
@@ -110,6 +113,14 @@ typedef struct Line{
   } directive;
   Instruction instruction;
 }Line;
+
+typedef struct {
+  char* name;
+  Expression value;
+  bool resolved;
+} EquExpr;
+
+VECTOR_DECLARE(VecEquExpr, EquExpr);
 
 VECTOR_DECLARE(VecLine, Line);
 
@@ -138,12 +149,15 @@ VECTOR_DECLARE(VecSection, Section);
 struct Assembler {
   VecSection sections;
   VecSymTbl symbolTable;
+  VecEquExpr equExprs;
   bool correct;
+
 };
 
 #include "parser.tab.h"
 
 #define EXTERN_SECTION 0
+#define ABS_SECTION 1
 
 struct Assembler assemblerCreate(void);
 void assemblerDestroy(struct Assembler *assembler);
@@ -166,6 +180,7 @@ void global(struct Assembler* assembler, VecString symlist);
 void word(struct Assembler* assembler, VecExpr expresions);
 void ascii(struct Assembler* assembler, char* string);
 void externSym(struct Assembler* assembler, VecString symlist);
+void equ(struct Assembler* assembler, char* name, Expression expr);
 
 //_________________________________________instructions____________________________________________________
 void instructionNoop(struct Assembler *assembler, InstrType instr_type);

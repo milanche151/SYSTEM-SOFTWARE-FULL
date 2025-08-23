@@ -51,6 +51,9 @@ csrwr {return CSRWR;}
 "%status" {yylval.number=0;return SREG;}
 " " { }
 % {return '%';}
+"+" { return '+'; }
+"-" { return '-'; }
+
 \n {curr_line++; return ENDL;}
 [-]?[0-9]+ {yylval.number=atoi(yytext);return NUM;}
 : {return ':' ;}
@@ -64,7 +67,6 @@ csrwr {return CSRWR;}
 %r(0|1|2|3|4|5|6|7|8|9|"10"|"11"|"12"|"13"|"14"|"15") {yylval.number=atoi(yytext+2);return REG;}
 "[" {return '[';}
 "]" {return ']';}
-"+" {return '+';}
 [#][^\n]* ;
 . {printf("ERROR UNRECOGNIZED ELEMENT %s", yytext);exit(-1);}
 %%

@@ -118,8 +118,9 @@ union YYSTYPE
   VecExpr exprvec;
   InstrType instrType;
   Operand operand;
+  Expression expr;
 
-#line 123 "inc/parser.tab.h"
+#line 124 "inc/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

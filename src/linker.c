@@ -702,7 +702,7 @@ Linker LinkerCreateRelocatable(FILE *input_files[], size_t n_input_files, FILE *
     - externs
   */
 
-  size_t new_symtab_size = 1 + unifiedSections.size + linker.globalSyms.size + externNames.size;
+  size_t new_symtab_size = 2 + unifiedSections.size + linker.globalSyms.size + externNames.size;
   SymTableRow *new_symtab = myMalloc(sizeof(*new_symtab) * new_symtab_size);
   
   {
@@ -710,6 +710,15 @@ Linker LinkerCreateRelocatable(FILE *input_files[], size_t n_input_files, FILE *
     size_t curr_sym_idx = 0;
     new_symtab[curr_sym_idx++] = (SymTableRow){
       .name = "*UNDEF*",
+      .section = 0,
+      .value = 0,
+      .bind = BIND_TYPE_LOCAL,
+      .type = SYM_TBL_TYPE_NOTYPE,
+      .defined = true,
+    };
+    // *ABS*
+    new_symtab[curr_sym_idx++] = (SymTableRow){
+      .name = "*ABS*",
       .section = 0,
       .value = 0,
       .bind = BIND_TYPE_LOCAL,

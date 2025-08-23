@@ -374,8 +374,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 		YY_FATAL_ERROR( "token too large, exceeds YYLMAX" ); \
 	yy_flex_strncpy( yytext, (yytext_ptr), yyleng + 1 ); \
 	(yy_c_buf_p) = yy_cp;
-#define YY_NUM_RULES 57
-#define YY_END_OF_BUFFER 58
+#define YY_NUM_RULES 58
+#define YY_END_OF_BUFFER 59
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -385,20 +385,20 @@ struct yy_trans_info
 	};
 static const flex_int16_t yy_accept[161] =
     {   0,
-        0,    0,   58,   56,   56,   41,   39,   56,   55,   47,
-       40,   54,   44,   56,   56,   42,   42,   43,   45,   52,
-       53,   45,   45,   45,   45,   45,   45,   45,   45,   45,
-       45,   45,   45,   45,   45,   45,    1,    0,   46,    0,
-       55,    0,    0,    0,    0,    0,   42,    0,    0,    0,
-        0,    0,    0,   45,   45,   45,   45,   45,   45,   45,
-       45,   45,   45,   45,   45,   45,   32,   45,   45,   28,
-       45,   45,   45,   45,   33,   45,   45,   45,    0,    0,
-       50,   51,   51,   49,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,   48,   22,   27,   16,   18,   17,   45,
+        0,    0,   59,   57,   57,   43,   39,   57,   56,   49,
+       40,   41,   46,   42,   57,   44,   44,   45,   47,   54,
+       55,   47,   47,   47,   47,   47,   47,   47,   47,   47,
+       47,   47,   47,   47,   47,   47,    1,    0,   48,    0,
+       56,    0,    0,    0,    0,    0,   44,    0,    0,    0,
+        0,    0,    0,   47,   47,   47,   47,   47,   47,   47,
+       47,   47,   47,   47,   47,   47,   32,   47,   47,   28,
+       47,   47,   47,   47,   33,   47,   47,   47,    0,    0,
+       52,   53,   53,   51,    0,    0,    0,    0,    0,    0,
+        0,    0,    0,   50,   22,   27,   16,   18,   17,   47,
 
-       45,   25,   45,   11,   45,   15,   24,   26,   20,   45,
-       14,   30,   31,   23,   45,   29,    0,    0,    0,    0,
-        9,    7,    0,    0,    0,    0,    0,   13,   45,   45,
+       47,   25,   47,   11,   47,   15,   24,   26,   20,   47,
+       14,   30,   31,   23,   47,   29,    0,    0,    0,    0,
+        9,    7,    0,    0,    0,    0,    0,   13,   47,   47,
        10,   12,   19,   21,    0,    0,    0,    0,    0,    0,
         0,    6,    5,   34,   35,   36,    0,    0,    8,    0,
         0,    0,    0,   38,    3,    2,    0,   37,    4,    0
@@ -555,11 +555,11 @@ static const flex_int16_t yy_chk[258] =
     } ;
 
 /* Table of booleans, true if rule could match eol. */
-static const flex_int32_t yy_rule_can_match_eol[58] =
+static const flex_int32_t yy_rule_can_match_eol[59] =
     {   0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     };
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     };
 
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
@@ -1076,92 +1076,97 @@ YY_RULE_SETUP
 {return '%';}
 	YY_BREAK
 case 41:
-/* rule 41 can match eol */
 YY_RULE_SETUP
 #line 54 "misc/lexer.l"
-{curr_line++; return ENDL;}
+{ return '+'; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
 #line 55 "misc/lexer.l"
-{yylval.number=atoi(yytext);return NUM;}
+{ return '-'; }
 	YY_BREAK
 case 43:
+/* rule 43 can match eol */
 YY_RULE_SETUP
-#line 56 "misc/lexer.l"
-{return ':' ;}
+#line 57 "misc/lexer.l"
+{curr_line++; return ENDL;}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 57 "misc/lexer.l"
-{yylval.string=strdup(yytext);return ',' ;}
+#line 58 "misc/lexer.l"
+{yylval.number=atoi(yytext);return NUM;}
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 58 "misc/lexer.l"
-{yylval.string=strdup(yytext);return SYMBOL;}
+#line 59 "misc/lexer.l"
+{return ':' ;}
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 59 "misc/lexer.l"
-{ yylval.string=strdup(yytext); return STRING; }
+#line 60 "misc/lexer.l"
+{yylval.string=strdup(yytext);return ',' ;}
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 60 "misc/lexer.l"
-{return '$';}
+#line 61 "misc/lexer.l"
+{yylval.string=strdup(yytext);return SYMBOL;}
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 61 "misc/lexer.l"
-{sscanf(yytext,"%x",&yylval.number);return NUM;}
+#line 62 "misc/lexer.l"
+{ yylval.string=strdup(yytext); return STRING; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 62 "misc/lexer.l"
-{ yylval.number=14; return REG; }
+#line 63 "misc/lexer.l"
+{return '$';}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 63 "misc/lexer.l"
-{ yylval.number=15; return REG; }
+#line 64 "misc/lexer.l"
+{sscanf(yytext,"%x",&yylval.number);return NUM;}
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 64 "misc/lexer.l"
-{yylval.number=atoi(yytext+2);return REG;}
+#line 65 "misc/lexer.l"
+{ yylval.number=14; return REG; }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 65 "misc/lexer.l"
-{return '[';}
+#line 66 "misc/lexer.l"
+{ yylval.number=15; return REG; }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 66 "misc/lexer.l"
-{return ']';}
+#line 67 "misc/lexer.l"
+{yylval.number=atoi(yytext+2);return REG;}
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 67 "misc/lexer.l"
-{return '+';}
+#line 68 "misc/lexer.l"
+{return '[';}
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 68 "misc/lexer.l"
-;
+#line 69 "misc/lexer.l"
+{return ']';}
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 69 "misc/lexer.l"
-{printf("ERROR UNRECOGNIZED ELEMENT %s", yytext);exit(-1);}
+#line 70 "misc/lexer.l"
+;
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 70 "misc/lexer.l"
+#line 71 "misc/lexer.l"
+{printf("ERROR UNRECOGNIZED ELEMENT %s", yytext);exit(-1);}
+	YY_BREAK
+case 58:
+YY_RULE_SETUP
+#line 72 "misc/lexer.l"
 ECHO;
 	YY_BREAK
-#line 1165 "src/lex.yy.c"
+#line 1170 "src/lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2178,7 +2183,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 70 "misc/lexer.l"
+#line 72 "misc/lexer.l"
 
 
 

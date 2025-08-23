@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
-
+#include "util.h"
 #include "instr.h"
 
 extern int yylex();
@@ -24,6 +24,7 @@ extern struct Assembler *assembler;
   VecExpr exprvec;
   InstrType instrType;
   Operand operand;
+  Expression expr;
 }
 
 %debug
@@ -33,6 +34,7 @@ extern struct Assembler *assembler;
 %token<string> STRING
 %type<stringvec> SYMLIST
 %type<exprvec> EXPR_LIST
+%type<expr> equ_expr equ_primary
 %token<number> NUM
 %token<number> REG
 %token<number> SREG
@@ -83,11 +85,44 @@ directive:
     ascii(assembler,$2);
   }
   |
+  EQU SYMBOL ',' equ_expr{
+    equ(assembler, $2, $4);
+  }
+  |
   END {
    
     AssemblerEndOfFile(assembler);
     YYACCEPT;
   }
+  ;
+
+equ_expr
+  : equ_expr '+' equ_primary {
+    Expression add = {
+      .type = EXPR_TYPE_ADD,
+      .op1 = myMalloc(sizeof(*add.op1)),
+      .op2 = myMalloc(sizeof(*add.op2))      
+    };
+    *add.op1 = $1;
+    *add.op2 = $3;
+    $$ = add;
+  }
+  | equ_expr '-' equ_primary{
+    Expression sub = {
+      .type = EXPR_TYPE_SUB,
+      .op1 = myMalloc(sizeof(*sub.op1)),
+      .op2 = myMalloc(sizeof(*sub.op2))      
+    };
+    *sub.op1 = $1;
+    *sub.op2 = $3;
+    $$ = sub;
+  }
+  | equ_primary
+;
+
+equ_primary
+  : SYMBOL { $$ = (Expression){ .type = EXPR_TYPE_SYMBOL, .name = $1, }; }
+  | NUM { $$ = (Expression){ .type = EXPR_TYPE_NUMBER, .val = $1, }; }
   ;
 
 instruction:

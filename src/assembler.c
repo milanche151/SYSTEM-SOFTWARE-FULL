@@ -11,6 +11,7 @@ VECTOR_IMPLEMENT(VecSection, Section);
 VECTOR_IMPLEMENT(VecExpr,Expression);
 VECTOR_IMPLEMENT(VecLine,Line);
 VECTOR_IMPLEMENT(VecByte, unsigned char);
+VECTOR_IMPLEMENT(VecEquExpr, EquExpr);
 
 void insertSymSection(struct Assembler* assembler, char* name){
   SymTableRow* found = NULL;
@@ -42,6 +43,59 @@ void insertSymSection(struct Assembler* assembler, char* name){
   }
 }
 
+void insertSym(struct Assembler *assembler, char *name, size_t section_index, CORE_ADDR value){
+  SymTableRow* found = NULL;
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
+    SymTableRow* current = &assembler->symbolTable.data[i];
+
+    if(strcmp(current->name, name) == 0) {
+      found = current;
+      break;
+    }
+  }
+
+  if(found != NULL){
+    // okay
+    if(!found->defined) {
+      found->section = section_index;
+      found->value = value;
+      found->defined = true;
+    }
+    // error
+    else {
+      printf("ERROR: Symbol %s already defined.\n", name);
+      assembler->correct = false;
+    }
+  }
+  else {
+    VecSymTblPush(
+      &assembler->symbolTable,
+      (SymTableRow){
+        .name = name,
+        .section = section_index,
+        .value = value,
+        .type = SYM_TBL_TYPE_NOTYPE,
+        .defined = true,
+        .bind = BIND_TYPE_LOCAL
+      }
+    );
+  }
+}
+
+void insertSymLabel(struct Assembler *assembler, char *name){
+  if(assembler->sections.size > 0){
+    Section *current_section = &assembler->sections.data[assembler->sections.size - 1];
+
+    insertSym(assembler, name, current_section->symtabIndex, current_section->machineCode.size);
+  }
+  // no section is open
+  else {
+    printf("ERROR: No section is open.\n");
+    assembler->correct = false;
+  }
+}
+
+#if 0
 void insertSymLabel(struct Assembler* assembler, char* name){
   SymTableRow* found = NULL;
   for(size_t i = 0; i < assembler->symbolTable.size; i++){
@@ -89,6 +143,7 @@ void insertSymLabel(struct Assembler* assembler, char* name){
     assembler->correct = false;
   }
 }
+#endif
 
 void insertSymExtern(struct Assembler* assembler, char *name){
   SymTableRow* found = NULL;
@@ -304,6 +359,10 @@ void externSym(struct Assembler* assembler,VecString symlist){
   for(int i = 0; i < symlist.size; i++){
     insertSymExtern(assembler, symlist.data[i]);
   }
+}
+
+void equ(struct Assembler* assembler, char* name, Expression expr){
+  VecEquExprPush(&assembler->equExprs,(EquExpr){ .name = name, .value = expr, .resolved = false });
 }
 
 void ascii(struct Assembler* assembler, char* string){
@@ -709,10 +768,12 @@ assemblerCreate(void){
   struct Assembler assembler = (struct Assembler){
     .sections = VecSectionCreate(),
     .symbolTable = VecSymTblCreate(),
+    .equExprs = VecEquExprCreate(),
     .correct = true,
   };
 
   insertSymSection(&assembler,"*UNDEF*");
+  insertSymSection(&assembler,"*ABS*");
   
   return assembler;
 }
@@ -729,6 +790,7 @@ void assemblerDestroy(struct Assembler *assembler){
   }
   VecSectionDestroy(&assembler->sections);
   VecSymTblDestroy(&assembler->symbolTable);
+  VecEquExprDestroy(&assembler->equExprs);
 }
 
 
@@ -743,6 +805,19 @@ static void exprPrint(const Expression* expr){
     printf("%s", expr->name);
     break;
 
+  case EXPR_TYPE_ADD:
+    exprPrint(expr->op1);
+    printf(" + ");
+    exprPrint(expr->op2);
+    break;
+
+  case EXPR_TYPE_SUB:
+    exprPrint(expr->op1);
+    printf(" - ");
+    exprPrint(expr->op2);
+    break;
+
+  default: assert(0);
   }
 }
 
@@ -797,7 +872,6 @@ static void linePrint(const Line* line){
 
     case DIRECTIVE_TYPE_ASCII:
       break;
-      
     default: assert(0);
     }
     break;
@@ -896,7 +970,119 @@ void assemblerPrint(const struct Assembler* assembler){
   }
 }
 
+bool exprResolvable(struct Assembler *assembler, Expression* expr){
+  switch (expr->type)
+  {
+  case EXPR_TYPE_NUMBER:
+    return true;
+    break;
+  case EXPR_TYPE_SYMBOL:{
+    SymTableRow *sym = SymTableFind(assembler, expr->name);
+    return sym != NULL && sym->defined;
+  }
+  break;
+  case EXPR_TYPE_ADD:
+  case EXPR_TYPE_SUB:
+    return exprResolvable(assembler, expr->op1) && exprResolvable(assembler,expr->op2);
+    break;
+  default: assert(0);
+  }
+}
+
+void exprResolve(struct Assembler *assembler, Expression* expr, int* sectionCounts, CORE_ADDR* offset, bool isAdd){
+  switch (expr->type) {
+
+  case EXPR_TYPE_NUMBER:
+    *offset  += isAdd ? +expr->val : -expr->val;
+    break;
+
+  case EXPR_TYPE_SYMBOL:{
+    SymTableRow *sym = SymTableFind(assembler, expr->name);
+    assert(sym != NULL && sym->defined);
+    switch (sym->section){
+    case EXTERN_SECTION:
+      sectionCounts[sym - assembler->symbolTable.data] += isAdd ? +1 : -1;
+      break;
+    case ABS_SECTION:
+      break;
+    default:
+      sectionCounts[sym->section] += isAdd ? +1 : -1;
+      break;
+    }
+    *offset  += isAdd ? +sym->value : -sym->value;
+  } break;
+  
+  case EXPR_TYPE_ADD:
+    exprResolve(assembler, expr->op1, sectionCounts, offset, isAdd);
+    exprResolve(assembler, expr->op2, sectionCounts, offset, isAdd);
+    break;
+
+  case EXPR_TYPE_SUB:
+    exprResolve(assembler, expr->op1, sectionCounts, offset, isAdd);
+    exprResolve(assembler, expr->op2, sectionCounts, offset, !isAdd);
+    break;
+
+  default:
+    break;
+  }
+}
+
 void AssemblerEndOfFile(struct Assembler *assembler){
+  //equ resolution
+
+  while(true){
+    bool anyResolved = false; // did we resolve any equ expr in this iteration
+    bool anyUnresolved = false; // is there any equ expr that is still not resolved after this iteration
+
+    for(size_t i = 0; i < assembler->equExprs.size ; i++){
+      EquExpr *curr_equ_expr = &assembler->equExprs.data[i];
+      if(!curr_equ_expr->resolved) anyUnresolved = true;
+      else continue;
+
+      if(!exprResolvable(assembler,&curr_equ_expr->value)) continue;
+
+      int *sectionCounts = myMalloc(sizeof(*sectionCounts) * assembler->symbolTable.size);
+      memset(sectionCounts,0,sizeof(*sectionCounts) * assembler->symbolTable.size);
+      CORE_ADDR offset = 0;
+
+      exprResolve(assembler,&curr_equ_expr->value, sectionCounts, &offset, true);
+      size_t target_section = ABS_SECTION;
+      bool error = false;
+      for(size_t j = 0; j < assembler->symbolTable.size; j++){
+        if(sectionCounts[j] == 0);
+        else if(sectionCounts[j]==1){
+          if(target_section == ABS_SECTION) target_section = j;
+          else {
+            error = true;
+            break;
+          }
+        }
+        else{
+          error = true;
+          break;
+        }
+      }
+      if(error){
+        printf("Symbol %s cannot be defined by EQU.\n",curr_equ_expr->name);
+      }
+      else{
+        insertSym(assembler, curr_equ_expr->name, target_section, offset);
+        curr_equ_expr->resolved = true;
+        anyResolved = true;
+      }
+      myFree(sectionCounts);
+    }
+
+    if(!anyUnresolved) break;
+    if(!anyResolved){
+      printf("Semantic error:Circular dependencies. \n");
+      assembler->correct = false;
+      return;
+    }
+  }
+  
+  //backpatching
+
   for (size_t i = 0; i < assembler->sections.size; i++)
   {
     Section* currentSection = &assembler->sections.data[i];
