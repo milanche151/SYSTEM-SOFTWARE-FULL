@@ -22,7 +22,6 @@ Emulator emulatorCreate(){
   Emulator em = { 0 };
   em.cpu.reg[REG_PC] = START_PC;
   em.timer = (Timer){
-    .curr_time = 0,
     .set_time = 0,
     .start_time = 0
   };
@@ -96,7 +95,7 @@ static void memoryWriteWord(Emulator *emu, uint32_t addr, uint32_t word,bool* is
   if(!*isAligned) return;
 
   if(addr == TIM_CFG_ADDR && word < 0x8){
-    emu->timer.set_time = (word + 1)*500; 
+    emu->timer.set_time = (word + 1)*CLOCKS_PER_SEC/2; 
   }
 
   for (size_t i = 0; i < 4; i++){
@@ -130,7 +129,7 @@ static void memoryWriteWord(Emulator *emu, uint32_t addr, uint32_t word,bool* is
   (void)isAligned; // suppress warnings
 
   if(addr == TIM_CFG_ADDR && word < 0x8){
-    emu->timer.set_time = (word + 1)*500; 
+    emu->timer.set_time = (word + 1)*CLOCKS_PER_SEC/2; 
   }
 
   for (size_t i = 0; i < 4; i++){
@@ -142,12 +141,12 @@ static void memoryWriteWord(Emulator *emu, uint32_t addr, uint32_t word,bool* is
 #endif
 
 void tick(Emulator* emu){
-  emu->timer.curr_time=clock();
-  double timedif = (double)(10000*(emu->timer.curr_time - emu->timer.start_time))/ CLOCKS_PER_SEC;
+  clock_t curr_time = clock();
+  clock_t timedif = (curr_time - emu->timer.start_time);
   //printf("Timer : %lu\n", timedif);
   if(timedif >= emu->timer.set_time){
     emu->status = EMU_STATUS_TIMER_INTERRUPT;
-    emu->timer.start_time = emu->timer.curr_time;
+    emu->timer.start_time = curr_time;
   }
 }
 
@@ -193,6 +192,7 @@ static void emulatorPrintFrame(uint32_t base_addr, const MemFrame *memframe){
   assert(base_addr % 0x10000 == 0);
 
   for(size_t i = 0; i < FRAME_SIZE; i += 16){
+
     bool is_used = false;
     
     for(size_t j = 0; j < 16; j++){
@@ -302,6 +302,7 @@ check_stdout(Emulator *emu){
 
   if(val != 0){
     printf("%c", val & 0xff);
+    fflush(stdout);
     memoryWriteWord(emu, TERM_OUT_ADDR, 0, &isAligned);
     assert(isAligned);
   }
@@ -309,9 +310,8 @@ check_stdout(Emulator *emu){
 
 void emulatorRun(Emulator* emu){
   bool isAligned = true;
-  emu->timer.set_time = 500;
+  emu->timer.set_time = CLOCKS_PER_SEC / 2;
   emu->timer.start_time = clock();
-  emu->timer.curr_time = emu->timer.start_time;
   memoryWriteWord(emu,TIM_CFG_ADDR,0,&isAligned);
   while(emu->status == EMU_STATUS_RUNNING){
     if(REG(REG_PC) % 4 != 0) {

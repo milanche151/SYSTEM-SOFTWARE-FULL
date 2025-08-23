@@ -106,7 +106,7 @@ typedef enum {
     LOAD_CSR_MEM_POSTINC = 0x7    // csr[A]<=mem32[gpr[B]]; gpr[B]<=gpr[B]+D;
 } LoadModifier;
 
-#define FRAME_SIZE 0x1000
+#define FRAME_SIZE 0x10000
 #define PMT1_SIZE 0x100
 #define PMT2_SIZE 0x100
 
@@ -117,7 +117,6 @@ typedef pmt1* pmt2[PMT2_SIZE];
 typedef struct Timer{
     clock_t set_time;
     clock_t start_time;
-    clock_t curr_time;
 }Timer;
 
 typedef struct Emulator{
