@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
-
+#include "util.h"
 #include "instr.h"
 
 extern int yylex();
@@ -24,13 +24,19 @@ extern struct Assembler *assembler;
   VecExpr exprvec;
   InstrType instrType;
   Operand operand;
+  Expression expr;
+  symTableType type;
 }
 
-%token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR
+%debug
+
+%token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV MOD NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR 
+%token FUNC OBJ TYPE
 %token<string> SYMBOL
 %token<string> STRING
 %type<stringvec> SYMLIST
 %type<exprvec> EXPR_LIST
+%type<expr> equ_expr equ_primary
 %token<number> NUM
 %token<number> REG
 %token<number> SREG
@@ -39,6 +45,7 @@ extern struct Assembler *assembler;
 %type<instrType> jmp_opcode
 %type<operand> operand
 %type<operand> jmp_operand
+%type<type> type
 
 %%
 program:
@@ -49,6 +56,7 @@ lines:
   lines ENDL line 
   | lines ENDL
   | line
+  | ENDL
   ;
   
 line:
@@ -68,6 +76,10 @@ directive:
     global(assembler,$2);
   }
   |
+  TYPE SYMBOL type {
+    type(assembler,$2,$3);
+  }
+  |
   WORD EXPR_LIST {
     word(assembler,$2);
   }
@@ -80,11 +92,49 @@ directive:
     ascii(assembler,$2);
   }
   |
+  EQU SYMBOL ',' equ_expr{
+    equ(assembler, $2, $4);
+  }
+  |
   END {
    
     AssemblerEndOfFile(assembler);
     YYACCEPT;
   }
+  ;
+
+type:
+  FUNC { $$ = SYM_TBL_TYPE_FUNCTION;}
+  |
+  OBJ { $$ = SYM_TBL_TYPE_OBJECT; }
+  ;
+equ_expr
+  : equ_expr '+' equ_primary {
+    Expression add = {
+      .type = EXPR_TYPE_ADD,
+      .op1 = myMalloc(sizeof(*add.op1)),
+      .op2 = myMalloc(sizeof(*add.op2))      
+    };
+    *add.op1 = $1;
+    *add.op2 = $3;
+    $$ = add;
+  }
+  | equ_expr '-' equ_primary{
+    Expression sub = {
+      .type = EXPR_TYPE_SUB,
+      .op1 = myMalloc(sizeof(*sub.op1)),
+      .op2 = myMalloc(sizeof(*sub.op2))      
+    };
+    *sub.op1 = $1;
+    *sub.op2 = $3;
+    $$ = sub;
+  }
+  | equ_primary
+;
+
+equ_primary
+  : SYMBOL { $$ = (Expression){ .type = EXPR_TYPE_SYMBOL, .name = $1, }; }
+  | NUM { $$ = (Expression){ .type = EXPR_TYPE_NUMBER, .val = $1, }; }
   ;
 
 instruction:
@@ -100,8 +150,8 @@ instruction:
   | tworeg_opcode REG ',' REG { instructionTworeg(assembler, $1, $2, $4); }
   | LD operand ',' REG { instructionLoadStore(assembler, INSTR_LD, $2,$4); }
   | ST REG ',' operand { instructionLoadStore(assembler, INSTR_STR, $4, $2); }
-  | CSRRD SREG ',' REG { instructionCSRReadWrite(assembler, INSTR_CSRRD, $2, $4); }
-  | CSRWR REG ',' SREG { instructionCSRReadWrite(assembler, INSTR_CSRWR, $4, $2); }
+  | CSRRD SREG ',' REG { instructionCSRReadWrite(assembler, INSTR_CSRRD, $4, $2); }
+  | CSRWR REG ',' SREG { instructionCSRReadWrite(assembler, INSTR_CSRWR, $2, $4); }
   ;
 
 operand:
@@ -130,11 +180,13 @@ tworeg_opcode:
   | SUB { $$ = INSTR_SUB; }
   | MUL { $$ = INSTR_MUL; }
   | DIV { $$ = INSTR_DIV; }
+  | MOD { $$ = INSTR_MOD; }
   | SHL { $$ = INSTR_SHL; }
   | SHR { $$ = INSTR_SHR; }
   | AND { $$ = INSTR_AND; }
   | XOR { $$ = INSTR_XOR; }
   | OR { $$ = INSTR_OR; }
+  | XCHG { $$ = INSTR_XCHG; }
   ;
 
 jmp_opcode:
@@ -162,6 +214,7 @@ EXPR_LIST:
 %%
 
 void yyerror(const char* s) {
-    printf("Error: %s\n", s);
+  extern int curr_line;
+  printf("Error: %s at line %d.\n", s, curr_line);
 }
 

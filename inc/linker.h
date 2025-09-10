@@ -30,13 +30,13 @@ typedef struct ObjFile {
 typedef struct GlobalSym{
   size_t file_index;
   size_t symtbl_index;
-}GlobalSym;
+} GlobalSym;
 
 typedef struct SectionPlace{
   CORE_ADDR start;
   CORE_ADDR end;
   char* section_name;
-}SectionPlace;
+} SectionPlace;
 
 VECTOR_DECLARE(VecGlobalSym, GlobalSym);
 VECTOR_DECLARE(VecSectionPlace, SectionPlace);
@@ -55,5 +55,6 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
 void LinkerDestroy(Linker *linker);
 void LinkerPrint(const Linker *linker);
 void LinkerPrintHexFile(const Linker *linker, FILE *output_file);
+Linker LinkerCreateRelocatable(FILE *input_files[], size_t n_input_files, FILE* output_file);
 
 #endif

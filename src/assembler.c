@@ -11,6 +11,20 @@ VECTOR_IMPLEMENT(VecSection, Section);
 VECTOR_IMPLEMENT(VecExpr,Expression);
 VECTOR_IMPLEMENT(VecLine,Line);
 VECTOR_IMPLEMENT(VecByte, unsigned char);
+VECTOR_IMPLEMENT(VecEquExpr, EquExpr);
+
+static const char *symbol_type_print[SYM_TBL_TYPE_COUNT] = {
+  [SYM_TBL_TYPE_NOTYPE]   = "NoType",
+  [SYM_TBL_TYPE_FILE_T]   = "File",
+  [SYM_TBL_TYPE_SECTION]  = "Section",
+  [SYM_TBL_TYPE_OBJECT]   = "Object",
+  [SYM_TBL_TYPE_FUNCTION] = "Function",
+};
+
+static const char *symbol_bind_print[BIND_TYPE_COUNT] = {
+  [BIND_TYPE_LOCAL] = "LOCAL",
+  [BIND_TYPE_GLOBAL] = "GLOBAL",
+};
 
 void insertSymSection(struct Assembler* assembler, char* name){
   SymTableRow* found = NULL;
@@ -42,6 +56,59 @@ void insertSymSection(struct Assembler* assembler, char* name){
   }
 }
 
+void insertSym(struct Assembler *assembler, char *name, size_t section_index, CORE_ADDR value){
+  SymTableRow* found = NULL;
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
+    SymTableRow* current = &assembler->symbolTable.data[i];
+
+    if(strcmp(current->name, name) == 0) {
+      found = current;
+      break;
+    }
+  }
+
+  if(found != NULL){
+    // okay
+    if(!found->defined) {
+      found->section = section_index;
+      found->value = value;
+      found->defined = true;
+    }
+    // error
+    else {
+      printf("ERROR: Symbol %s already defined.\n", name);
+      assembler->correct = false;
+    }
+  }
+  else {
+    VecSymTblPush(
+      &assembler->symbolTable,
+      (SymTableRow){
+        .name = name,
+        .section = section_index,
+        .value = value,
+        .type = SYM_TBL_TYPE_NOTYPE,
+        .defined = true,
+        .bind = BIND_TYPE_LOCAL
+      }
+    );
+  }
+}
+
+void insertSymLabel(struct Assembler *assembler, char *name){
+  if(assembler->sections.size > 0){
+    Section *current_section = &assembler->sections.data[assembler->sections.size - 1];
+
+    insertSym(assembler, name, current_section->symtabIndex, current_section->machineCode.size);
+  }
+  // no section is open
+  else {
+    printf("ERROR: No section is open.\n");
+    assembler->correct = false;
+  }
+}
+
+#if 0
 void insertSymLabel(struct Assembler* assembler, char* name){
   SymTableRow* found = NULL;
   for(size_t i = 0; i < assembler->symbolTable.size; i++){
@@ -89,6 +156,7 @@ void insertSymLabel(struct Assembler* assembler, char* name){
     assembler->correct = false;
   }
 }
+#endif
 
 void insertSymExtern(struct Assembler* assembler, char *name){
   SymTableRow* found = NULL;
@@ -102,8 +170,16 @@ void insertSymExtern(struct Assembler* assembler, char *name){
   }
   
   if(found != NULL){
-    printf("ERROR: Extern symbol already defined.\n");
-    assembler->correct = false;
+    if(found->bind == BIND_TYPE_GLOBAL || found->defined){
+      printf("ERROR: Extern symbol already defined.\n");
+      assembler->correct = false;
+    }
+    else{
+      found->section = EXTERN_SECTION;
+      found->value = 0;
+      found->defined = true;
+    }
+    
   }
   else {
     VecSymTblPush(
@@ -181,20 +257,6 @@ void initSymbolTable(struct Assembler* assembler){
 }
 
 void printSymTable(const struct Assembler* assembler){
-
-  const char *symbol_type_print[SYM_TBL_TYPE_COUNT] = {
-    [SYM_TBL_TYPE_NOTYPE]   = "NoType",
-    [SYM_TBL_TYPE_FILE_T]   = "File",
-    [SYM_TBL_TYPE_SECTION]  = "Section",
-    [SYM_TBL_TYPE_OBJECT]   = "Object",
-    [SYM_TBL_TYPE_FUNCTION] = "Function",
-  };
-
-  const char *symbol_bind_print[BIND_TYPE_COUNT] = {
-    [BIND_TYPE_LOCAL] = "LOCAL",
-    [BIND_TYPE_GLOBAL] = "GLOBAL",
-  };
-
   printf("Symtab:\n");
   printf("%-5s %-10s %-10s %-10s %-10s %-10s %-10s\n",
     "Num",
@@ -239,6 +301,44 @@ void global(struct Assembler* assembler, VecString symlist){
  for(int i = 0; i < symlist.size; i++){
     declareSymGlobal(assembler, symlist.data[i]);
  }
+}
+
+void type(struct Assembler* assembler, char* sym, symTableType type){
+  SymTableRow* found = NULL;
+  for(size_t i = 0; i < assembler->symbolTable.size; i++){
+    SymTableRow* current = &assembler->symbolTable.data[i];
+
+    if(strcmp(current->name, sym) == 0) {
+      found = current;
+      break;
+    }
+  }
+
+  if(found != NULL){
+    //  symbol already has type
+    if(found->type != SYM_TBL_TYPE_NOTYPE){
+      printf("ERROR:Symbol can't be declared as %s, already has type.\n",symbol_type_print[type]);
+      assembler->correct = false;
+    }
+    // okay
+    else {
+      found->type = type;
+    }
+  }
+  else {
+
+    VecSymTblPush(
+      &assembler->symbolTable,
+      (SymTableRow){
+        .name = sym,
+        .section = 0,
+        .value = 0,
+        .type = type,
+        .defined = false,
+        .bind = BIND_TYPE_LOCAL
+      }
+    );
+  }
 }
 
 static void
@@ -306,8 +406,13 @@ void externSym(struct Assembler* assembler,VecString symlist){
   }
 }
 
+void equ(struct Assembler* assembler, char* name, Expression expr){
+  VecEquExprPush(&assembler->equExprs,(EquExpr){ .name = name, .value = expr, .resolved = false });
+}
+
 void ascii(struct Assembler* assembler, char* string){
-  Section *current_section = &assembler->sections.data[assembler->sections.size - 1];
+  if(assembler->sections.size > 0){
+    Section *current_section = &assembler->sections.data[assembler->sections.size - 1];
     Line line  = {
       .type = LINE_TYPE_DIRECTIVE,
       .directive = {
@@ -315,8 +420,25 @@ void ascii(struct Assembler* assembler, char* string){
         .string = string,
       },
     };
+    
+    bool has_escape = false;
     for(char *p = string; *p != 0; p++){
-      if(*p != '"') VecBytePush(&current_section->machineCode, *p);
+      if(*p == '\\') {
+        has_escape = true;
+      }
+      else if(*p != '"') {
+        if(has_escape){
+          assert(*p == 'n');
+          VecBytePush(&current_section->machineCode, '\n');
+        }
+        else {
+          VecBytePush(&current_section->machineCode, *p);
+        }
+        has_escape = false;
+      }
+      else {
+        // nothing
+      }
     }
     VecBytePush(&current_section->machineCode, 0);
     
@@ -329,6 +451,10 @@ void ascii(struct Assembler* assembler, char* string){
     }
 
     VecLinePush(&current_section->lines,line);
+  }else{
+    printf("Directive placed outside of section.\n");
+    assembler->correct = false;
+  }
 }
 
 // this register's value is always 0 (reg0's value is always 0)
@@ -354,24 +480,32 @@ void insertGenericInstruction(struct Assembler *assembler, int opcode, int modif
   VecBytePush(&current_section->machineCode, (gprC   << 4) & 0xf0 | (disp     >> 8) & 0x0f);
   VecBytePush(&current_section->machineCode, (disp   >> 0) & 0xff);
 }
-
+#define ZERO_MODIFIER 0
 void instructionNoop(struct Assembler *assembler, InstrType instr_type){
-  const InstrDesc* desc = instr_descs+instr_type;
-  assert(desc->family==INSTR_FAMILY_NOOP);
+  InstructionOpcode curr_opcode;
+  if(instr_type == INSTR_HALT)
+    curr_opcode = ASM_INSTR_HALT;
+
+  else if(instr_type == INSTR_INT)
+    curr_opcode = ASM_INSTR_INT;
+  else
+    assert(0);
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
 
-    insertGenericInstruction(assembler, desc->opcode, desc->modifier, 0, 0, 0, 0);
+    insertGenericInstruction(assembler, curr_opcode, ZERO_MODIFIER, 0, 0, 0, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
-        .type=instr_type
+      .type = instr_type,
+      .family = INSTR_FAMILY_NOOP,
       }
     };
     VecLinePush(&current_section->lines,line);
   }
   else{
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
   
@@ -384,6 +518,7 @@ void instructionRet(struct Assembler *assembler){
     insertGenericInstruction(assembler, 0x09, 0x03, REGISTER_PC, REGISTER_SP, 0, +STACK_DISP);
   }
   else {
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
@@ -391,28 +526,28 @@ void instructionRet(struct Assembler *assembler){
 void instructionIret(struct Assembler *assembler){
   if(assembler->sections.size > 0){
 
-    insertGenericInstruction(assembler, 0x09, 0x01, REGISTER_SP, REGISTER_SP, 0, 2 * STACK_DISP);
-    insertGenericInstruction(assembler, 0x09, 0x06, REGISTER_CSR_STATUS, REGISTER_SP, REGISTER_ZERO, -1 * STACK_DISP);
-    insertGenericInstruction(assembler, 0x09, 0x02, REGISTER_PC, REGISTER_SP, REGISTER_ZERO, -2 * STACK_DISP);
+    insertGenericInstruction(assembler, 0x09, 0x06, REGISTER_CSR_STATUS, REGISTER_SP, REGISTER_ZERO, +1 * STACK_DISP);
+    insertGenericInstruction(assembler, 0x09, 0x03, REGISTER_PC, REGISTER_SP, REGISTER_ZERO, +2 * STACK_DISP);
   }
 
   else {
+    printf("No sections defined.");
     assembler->correct = false;
   }
 }
 
 void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int reg){
-  const InstrDesc* desc = instr_descs+instr_type;
-  assert(desc->family==INSTR_FAMILY_ONEREG);
-
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
 
     if(instr_type == INSTR_PUSH){
-      insertGenericInstruction(assembler, desc->opcode, desc->modifier, REGISTER_SP, 0, reg, -STACK_DISP);
+      insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_REG_INDIRECT_PREINC, REGISTER_SP, 0, reg, -STACK_DISP);
     }
     else if(instr_type == INSTR_POP){
-      insertGenericInstruction(assembler, desc->opcode, desc->modifier, reg, REGISTER_SP, 0, +STACK_DISP);
+      insertGenericInstruction(assembler, ASM_INSTR_LOAD, ASM_LOAD_MEM_INDIRECT_POSTINC, reg, REGISTER_SP, 0, +STACK_DISP);
+    }
+    else if(instr_type == INSTR_NOT){
+      insertGenericInstruction(assembler, ASM_INSTR_LOGIC, ASM_LOGIC_NOT , reg, REGISTER_ZERO, REGISTER_ZERO, 0);
     }
     else assert(0);
 
@@ -420,29 +555,80 @@ void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int re
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
         .type=instr_type,
+        .family = INSTR_FAMILY_ONEREG,
         .reg1 = reg,
       }
     };
     VecLinePush(&current_section->lines,line);
   }
   else{
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
 
 void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD){
-  const InstrDesc* desc = instr_descs+instr_type;
-  assert(desc->family==INSTR_FAMILY_TWOREG);
-
+  InstructionOpcode curr_opcode;
+  unsigned int modifier;
+  switch (instr_type)
+  {
+  case INSTR_XCHG:
+    curr_opcode = ASM_INSTR_XCHG;
+    modifier = ZERO_MODIFIER;
+    break;
+  case INSTR_ADD:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_ADD;
+    break;
+  case INSTR_SUB:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_SUB;
+    break;
+  case INSTR_MUL:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_MUL;
+    break;
+  case INSTR_DIV:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_DIV;
+    break;
+  case INSTR_MOD:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_MOD;
+    break;
+  case INSTR_AND:
+    curr_opcode = ASM_INSTR_LOGIC;
+    modifier = ASM_LOGIC_AND;
+    break;
+  case INSTR_OR:
+    curr_opcode = ASM_INSTR_LOGIC;
+    modifier = ASM_LOGIC_OR;
+    break;
+  case INSTR_XOR:
+    curr_opcode = ASM_INSTR_LOGIC;
+    modifier = ASM_LOGIC_XOR;
+    break;
+  case INSTR_SHL:
+    curr_opcode = ASM_INSTR_SHIFT;
+    modifier = ASM_SHIFT_LEFT;
+    break;
+  case INSTR_SHR:
+    curr_opcode = ASM_INSTR_SHIFT;
+    modifier = ASM_SHIFT_RIGHT;
+    break;  
+  default:
+    assert(0);
+  }
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
     
-    insertGenericInstruction(assembler, desc->opcode, desc->modifier, regD, regD, regS, 0);
+    insertGenericInstruction(assembler, curr_opcode, modifier, regD, regD, regS, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
         .type=instr_type,
+        .family = INSTR_FAMILY_TWOREG,
         .reg1 = regS,
         .reg2 = regD,
       }
@@ -450,6 +636,7 @@ void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int re
     VecLinePush(&current_section->lines,line);
   }
   else{
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
@@ -459,8 +646,13 @@ static bool canFitIn12bit(int dist){
 }
 
 void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Operand operand, int regD){
-  const InstrDesc *desc = instr_descs+instrType;
-  assert(desc->family == INSTR_FAMILY_LD || desc->family == INSTR_FAMILY_STR);
+  InstructionOpcode curr_opcode;
+  if(instrType == INSTR_LD)
+    curr_opcode = ASM_INSTR_LOAD;
+  else if(instrType == INSTR_STR)
+    curr_opcode = ASM_INSTR_STORE;
+  else
+    assert(0);
 
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
@@ -517,34 +709,36 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
     if(instrType == INSTR_LD){
       switch(operand.type){
       case OPERAND_TYPE_IMMED_LIT:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, REGISTER_PC, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_IMMED_SYM:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, REGISTER_PC, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_MEMDIR_LIT:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, regD, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, regD, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_MEMDIR_SYM: 
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, regD, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, regD, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGDIR:
-        insertGenericInstruction(assembler, desc->opcode, 0x01, regD, operand.reg, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_REG_DISP, regD, operand.reg, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGIND:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, operand.reg, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, operand.reg, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGIND_LIT:
         if(canFitIn12bit(operand.literal)){
-          insertGenericInstruction(assembler, desc->opcode, 0x02, regD, operand.reg, REGISTER_ZERO, operand.literal);
+          insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, operand.reg, REGISTER_ZERO, operand.literal);
         }
         else {
+          printf("Literal can't fit 12bit size.\n");
           assembler->correct = false;
         }
         break;
       case OPERAND_TYPE_REGIND_SYM:
+        printf("LD REGIND SYM not allowed.\n");
         assembler->correct = false;
         break;
       default:assert(0);
@@ -554,29 +748,33 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
       switch(operand.type){
       case OPERAND_TYPE_IMMED_LIT:
       case OPERAND_TYPE_IMMED_SYM:
+        printf("STR IMMED SYM not allowed.\n");
         assembler->correct = false;
         break;
       case OPERAND_TYPE_MEMDIR_LIT:
-        insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, REGISTER_ZERO, regD, 0);
+        insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_MEM_INDIRECT, REGISTER_PC, REGISTER_ZERO, regD, 0);
         break;
       case OPERAND_TYPE_MEMDIR_SYM:
-        insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, REGISTER_ZERO, regD, 0);
+        insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_MEM_INDIRECT, REGISTER_PC, REGISTER_ZERO, regD, 0);
         break;
       case OPERAND_TYPE_REGDIR:
+        printf("STR REGDIR not allowed\n");
         assembler->correct = false;
         break;
       case OPERAND_TYPE_REGIND:
-        insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, operand.reg, regD, 0);
+        insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_REG_INDIRECT, REGISTER_ZERO, operand.reg, regD, 0);
         break;
       case OPERAND_TYPE_REGIND_LIT:
         if(canFitIn12bit(operand.literal)){
-          insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, operand.reg, regD, operand.literal);
+          insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_REG_INDIRECT, REGISTER_ZERO, operand.reg, regD, operand.literal);
         }
         else {
+          printf("Literal can't fit 12bit size.\n");
           assembler->correct = false;
         }
         break;
       case OPERAND_TYPE_REGIND_SYM:
+        printf("STR REGIND SYM not allowed.\n");
         assembler->correct = false;
         break;
       }
@@ -589,6 +787,7 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
         .type = instrType,
+        .family = instrType = INSTR_LD ? INSTR_FAMILY_LD : INSTR_FAMILY_STR,
         .operand = operand,
         .reg1 = regD,
       }
@@ -596,33 +795,66 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
     VecLinePush(&current_section->lines,line);
   }
   else {
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
 
-void instructionCSRReadWrite(struct Assembler *assembler, InstrType instr_type, int regGPR, int regCSR){
-  const InstrDesc *desc = instr_descs+instr_type;
-  assert(desc->family == INSTR_FAMILY_CSRRD || desc->family == INSTR_FAMILY_CSRWR);
+void instructionCSRReadWrite(struct Assembler *assembler, InstrType instrType, int regGPR, int regCSR){
+  InstructionOpcode curr_opcode;
+  LoadModifier curr_modifier;
+  if(instrType == INSTR_CSRRD){
+    curr_opcode = ASM_INSTR_LOAD;
+    curr_modifier = ASM_LOAD_CSR;
+  }
+  else if(instrType == INSTR_CSRWR){
+    curr_opcode = ASM_INSTR_LOAD;
+    curr_modifier = ASM_LOAD_CSR_FROM_REG;
+  }
+  else
+    assert(0);
 
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
 
-    if(instr_type == INSTR_CSRRD){
-      insertGenericInstruction(assembler, desc->opcode, desc->modifier, regGPR, regCSR, 0, 0);
+    if(instrType == INSTR_CSRRD){
+      insertGenericInstruction(assembler, curr_opcode, curr_modifier, regGPR, regCSR, REGISTER_ZERO, 0);
     }
-    else if(instr_type == INSTR_CSRWR){
-      insertGenericInstruction(assembler, desc->opcode, desc->modifier, regCSR, regGPR, 0, 0);
+    else if(instrType == INSTR_CSRWR){
+      insertGenericInstruction(assembler, curr_opcode, curr_modifier, regCSR, regGPR, REGISTER_ZERO, 0);
     }
     else assert(0);
   }
   else {
+    printf("No sections defined.\n");
     assembler->correct = false;
 }
 }
 
 void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand){
-  const InstrDesc *desc = instr_descs+instrType;
-  assert(desc->family == INSTR_FAMILY_TWOREG_ONEOP);
+  unsigned int curr_opcode = ASM_INSTR_JMP;
+  LoadModifier curr_modifier;
+  switch (instrType)
+  {
+  case INSTR_JMP:
+    curr_modifier = ASM_JMP_MEM_UNCONDITIONAL;
+    break;
+  case INSTR_BEQ:
+    curr_modifier = ASM_JMP_MEM_EQ;
+    break;
+  case INSTR_BNE:
+    curr_modifier = ASM_JMP_MEM_NE;
+    break;
+  case INSTR_BGT:
+    curr_modifier = ASM_JMP_MEM_GT;
+    break;
+  case INSTR_CALL:
+    curr_modifier = ASM_CALL_MEM_INDIRECT;
+    curr_opcode = ASM_INSTR_CALL;
+    break; 
+  default:
+    assert(0);
+  }
 
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
@@ -652,19 +884,21 @@ void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1,
     }
 
     //insert code
-    insertGenericInstruction(assembler, desc->opcode, desc->modifier, REGISTER_PC, reg1, reg2, 0);
+    insertGenericInstruction(assembler, curr_opcode, curr_modifier, REGISTER_PC, reg1, reg2, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
         .type = instrType,
         .operand = operand,
+        .family = INSTR_FAMILY_TWOREG_ONEOP,
         .reg1 = reg1,
         .reg2 = reg2,
       }
     };
     VecLinePush(&current_section->lines,line);
   }else{
+    printf("No sections defined.\n");
     assembler->correct = false;
   }
 }
@@ -674,10 +908,12 @@ assemblerCreate(void){
   struct Assembler assembler = (struct Assembler){
     .sections = VecSectionCreate(),
     .symbolTable = VecSymTblCreate(),
+    .equExprs = VecEquExprCreate(),
     .correct = true,
   };
 
   insertSymSection(&assembler,"*UNDEF*");
+  insertSymSection(&assembler,"*ABS*");
   
   return assembler;
 }
@@ -694,6 +930,7 @@ void assemblerDestroy(struct Assembler *assembler){
   }
   VecSectionDestroy(&assembler->sections);
   VecSymTblDestroy(&assembler->symbolTable);
+  VecEquExprDestroy(&assembler->equExprs);
 }
 
 
@@ -708,6 +945,19 @@ static void exprPrint(const Expression* expr){
     printf("%s", expr->name);
     break;
 
+  case EXPR_TYPE_ADD:
+    exprPrint(expr->op1);
+    printf(" + ");
+    exprPrint(expr->op2);
+    break;
+
+  case EXPR_TYPE_SUB:
+    exprPrint(expr->op1);
+    printf(" - ");
+    exprPrint(expr->op2);
+    break;
+
+  default: assert(0);
   }
 }
 
@@ -747,6 +997,35 @@ static void linePrint(const Line* line){
     [DIRECTIVE_TYPE_SKIP]  = ".skip",
     [DIRECTIVE_TYPE_ASCII] = ".ascii",
   };
+  static const char *instrNames[] = {
+    [INSTR_HALT]="HALT",
+    [INSTR_INT]="INT",
+    [INSTR_RET]="RET",
+    [INSTR_IRET]="IRET",
+    [INSTR_CALL]="CALL",
+    [INSTR_JMP]="JMP",
+    [INSTR_BEQ]="BEQ",
+    [INSTR_BNE]="BNE",
+    [INSTR_BGT]="BGT",
+    [INSTR_PUSH]="PUSH",
+    [INSTR_POP]="POP",
+    [INSTR_NOT]="NOT",
+    [INSTR_XCHG]="XCHG",
+    [INSTR_ADD]="ADD",
+    [INSTR_SUB]="SUB",
+    [INSTR_MUL]="MUL",
+    [INSTR_DIV]="DIV",
+    [INSTR_MOD]="MOD",
+    [INSTR_AND]="AND",
+    [INSTR_OR]="OR",
+    [INSTR_XOR]="XOR",
+    [INSTR_SHL]="SHL",
+    [INSTR_SHR]="SHR",
+    [INSTR_LD]="LD",
+    [INSTR_STR]="STR",
+    [INSTR_CSRRD]="CSRRD",
+    [INSTR_CSRWR]="CSRWR",
+  };
   switch (line->type)
   {
   case LINE_TYPE_DIRECTIVE:
@@ -762,14 +1041,13 @@ static void linePrint(const Line* line){
 
     case DIRECTIVE_TYPE_ASCII:
       break;
-      
     default: assert(0);
     }
     break;
   case LINE_TYPE_INSTRUCITON: {
-    const InstrDesc *desc = &instr_descs[line->instruction.type];
-    printf("%s ", desc->name);
-    switch(desc->family){
+   
+    printf("%s ", instrNames[line->instruction.type]);
+    switch(line->instruction.family){
     case INSTR_FAMILY_NOOP:
       break;
     case INSTR_FAMILY_ONEREG:
@@ -861,7 +1139,119 @@ void assemblerPrint(const struct Assembler* assembler){
   }
 }
 
+bool exprResolvable(struct Assembler *assembler, Expression* expr){
+  switch (expr->type)
+  {
+  case EXPR_TYPE_NUMBER:
+    return true;
+    break;
+  case EXPR_TYPE_SYMBOL:{
+    SymTableRow *sym = SymTableFind(assembler, expr->name);
+    return sym != NULL && sym->defined;
+  }
+  break;
+  case EXPR_TYPE_ADD:
+  case EXPR_TYPE_SUB:
+    return exprResolvable(assembler, expr->op1) && exprResolvable(assembler,expr->op2);
+    break;
+  default: assert(0);
+  }
+}
+
+void exprResolve(struct Assembler *assembler, Expression* expr, int* sectionCounts, CORE_ADDR* offset, bool isAdd){
+  switch (expr->type) {
+
+  case EXPR_TYPE_NUMBER:
+    *offset  += isAdd ? +expr->val : -expr->val;
+    break;
+
+  case EXPR_TYPE_SYMBOL:{
+    SymTableRow *sym = SymTableFind(assembler, expr->name);
+    assert(sym != NULL && sym->defined);
+    switch (sym->section){
+    case EXTERN_SECTION:
+      sectionCounts[sym - assembler->symbolTable.data] += isAdd ? +1 : -1;
+      break;
+    case ABS_SECTION:
+      break;
+    default:
+      sectionCounts[sym->section] += isAdd ? +1 : -1;
+      break;
+    }
+    *offset  += isAdd ? +sym->value : -sym->value;
+  } break;
+  
+  case EXPR_TYPE_ADD:
+    exprResolve(assembler, expr->op1, sectionCounts, offset, isAdd);
+    exprResolve(assembler, expr->op2, sectionCounts, offset, isAdd);
+    break;
+
+  case EXPR_TYPE_SUB:
+    exprResolve(assembler, expr->op1, sectionCounts, offset, isAdd);
+    exprResolve(assembler, expr->op2, sectionCounts, offset, !isAdd);
+    break;
+
+  default:
+    break;
+  }
+}
+
 void AssemblerEndOfFile(struct Assembler *assembler){
+  //equ resolution
+
+  while(true){
+    bool anyResolved = false; // did we resolve any equ expr in this iteration
+    bool anyUnresolved = false; // is there any equ expr that is still not resolved after this iteration
+
+    for(size_t i = 0; i < assembler->equExprs.size ; i++){
+      EquExpr *curr_equ_expr = &assembler->equExprs.data[i];
+      if(!curr_equ_expr->resolved) anyUnresolved = true;
+      else continue;
+
+      if(!exprResolvable(assembler,&curr_equ_expr->value)) continue;
+
+      int *sectionCounts = myMalloc(sizeof(*sectionCounts) * assembler->symbolTable.size);
+      memset(sectionCounts,0,sizeof(*sectionCounts) * assembler->symbolTable.size);
+      CORE_ADDR offset = 0;
+
+      exprResolve(assembler,&curr_equ_expr->value, sectionCounts, &offset, true);
+      size_t target_section = ABS_SECTION;
+      bool error = false;
+      for(size_t j = 0; j < assembler->symbolTable.size; j++){
+        if(sectionCounts[j] == 0);
+        else if(sectionCounts[j]==1){
+          if(target_section == ABS_SECTION) target_section = j;
+          else {
+            error = true;
+            break;
+          }
+        }
+        else{
+          error = true;
+          break;
+        }
+      }
+      if(error){
+        printf("Symbol %s cannot be defined by EQU.\n",curr_equ_expr->name);
+      }
+      else{
+        insertSym(assembler, curr_equ_expr->name, target_section, offset);
+        curr_equ_expr->resolved = true;
+        anyResolved = true;
+      }
+      myFree(sectionCounts);
+    }
+
+    if(!anyUnresolved) break;
+    if(!anyResolved){
+      printf("Semantic error:Circular dependencies. \n");
+      assembler->correct = false;
+      return;
+    }
+  }
+  
+  //backpatching
+
   for (size_t i = 0; i < assembler->sections.size; i++)
   {
     Section* currentSection = &assembler->sections.data[i];
@@ -880,6 +1270,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           add_data32_reloc(assembler, currentSection, currentFR->offset, symbol);
         }
         else {
+          printf("Relocation error:forward ref %s is not a symbol.\n", currentFR->name);
           assembler->correct = false;
         }
       }
@@ -896,6 +1287,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           *third |= (dist)&(0xFF);
         }
         else {
+          printf("Literal can't fit 12bit size.\n");
           assembler->correct = false;
         }
       }
@@ -912,6 +1304,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           *third |= (dist)&(0xFF);
         }
         else {
+          printf("Literal can't fit 12bit size.\n");
           assembler->correct = false;
         }
 
@@ -920,6 +1313,7 @@ void AssemblerEndOfFile(struct Assembler *assembler){
           add_data32_reloc(assembler, currentSection, currentSection->machineCode.size + currentFR->lit_idx * 4, symbol);
         }
         else {
+          printf("Relocation error:forward ref %s is not a symbol.\n", currentFR->name);
           assembler->correct = false;
         }
       }

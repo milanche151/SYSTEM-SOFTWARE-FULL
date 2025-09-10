@@ -1,5 +1,5 @@
 .section data
-
+.ascii "abcde"
 .global x
 
 x: 

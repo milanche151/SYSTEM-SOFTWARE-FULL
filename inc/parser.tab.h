@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.8.2.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,15 +31,14 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
-   especially those whose name start with YY_ or yy_.  They are
-   private implementation details that can be changed or removed.  */
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_YY_INC_PARSER_TAB_H_INCLUDED
 # define YY_YY_INC_PARSER_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 0
+# define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -50,60 +49,59 @@ extern int yydebug;
   #include "assembler.h"
   #include "vector.h"
 
-#line 54 "inc/parser.tab.h"
+#line 53 "inc/parser.tab.h"
 
-/* Token kinds.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
-    GLOBAL = 258,                  /* GLOBAL  */
-    EXTERN = 259,                  /* EXTERN  */
-    ENDL = 260,                    /* ENDL  */
-    SECTION = 261,                 /* SECTION  */
-    COLON = 262,                   /* COLON  */
-    WORD = 263,                    /* WORD  */
-    SKIP = 264,                    /* SKIP  */
-    ASCII = 265,                   /* ASCII  */
-    EQU = 266,                     /* EQU  */
-    END = 267,                     /* END  */
-    HALT = 268,                    /* HALT  */
-    INT = 269,                     /* INT  */
-    IRET = 270,                    /* IRET  */
-    CALL = 271,                    /* CALL  */
-    RET = 272,                     /* RET  */
-    JMP = 273,                     /* JMP  */
-    BEQ = 274,                     /* BEQ  */
-    BNE = 275,                     /* BNE  */
-    BGT = 276,                     /* BGT  */
-    PUSH = 277,                    /* PUSH  */
-    POP = 278,                     /* POP  */
-    XCHG = 279,                    /* XCHG  */
-    ADD = 280,                     /* ADD  */
-    SUB = 281,                     /* SUB  */
-    MUL = 282,                     /* MUL  */
-    DIV = 283,                     /* DIV  */
-    NOT = 284,                     /* NOT  */
-    AND = 285,                     /* AND  */
-    OR = 286,                      /* OR  */
-    XOR = 287,                     /* XOR  */
-    SHL = 288,                     /* SHL  */
-    SHR = 289,                     /* SHR  */
-    LD = 290,                      /* LD  */
-    ST = 291,                      /* ST  */
-    CSRRD = 292,                   /* CSRRD  */
-    CSRWR = 293,                   /* CSRWR  */
-    SYMBOL = 294,                  /* SYMBOL  */
-    STRING = 295,                  /* STRING  */
-    NUM = 296,                     /* NUM  */
-    REG = 297,                     /* REG  */
-    SREG = 298                     /* SREG  */
+    GLOBAL = 258,
+    EXTERN = 259,
+    ENDL = 260,
+    SECTION = 261,
+    COLON = 262,
+    WORD = 263,
+    SKIP = 264,
+    ASCII = 265,
+    EQU = 266,
+    END = 267,
+    HALT = 268,
+    INT = 269,
+    IRET = 270,
+    CALL = 271,
+    RET = 272,
+    JMP = 273,
+    BEQ = 274,
+    BNE = 275,
+    BGT = 276,
+    PUSH = 277,
+    POP = 278,
+    XCHG = 279,
+    ADD = 280,
+    SUB = 281,
+    MUL = 282,
+    DIV = 283,
+    MOD = 284,
+    NOT = 285,
+    AND = 286,
+    OR = 287,
+    XOR = 288,
+    SHL = 289,
+    SHR = 290,
+    LD = 291,
+    ST = 292,
+    CSRRD = 293,
+    CSRWR = 294,
+    FUNC = 295,
+    OBJ = 296,
+    TYPE = 297,
+    SYMBOL = 298,
+    STRING = 299,
+    NUM = 300,
+    REG = 301,
+    SREG = 302
   };
-  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
@@ -118,6 +116,8 @@ union YYSTYPE
   VecExpr exprvec;
   InstrType instrType;
   Operand operand;
+  Expression expr;
+  symTableType type;
 
 #line 123 "inc/parser.tab.h"
 
@@ -130,8 +130,6 @@ typedef union YYSTYPE YYSTYPE;
 
 extern YYSTYPE yylval;
 
-
 int yyparse (void);
-
 
 #endif /* !YY_YY_INC_PARSER_TAB_H_INCLUDED  */

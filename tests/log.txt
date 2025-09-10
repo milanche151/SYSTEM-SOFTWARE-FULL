@@ -1,0 +1,237 @@
+ASSEMBLER PRINT:
+Symtab:
+Num   Name       Section    Binding    Value      Type       Status    
+0     *UNDEF*    *UNDEF*    LOCAL      0          Section    Defined   
+1     text       text       LOCAL      0          Section    Defined   
+2     main       text       LOCAL      0          NoType     Defined   
+3     handler    text       LOCAL      24         NoType     Defined   
+4     software_intr text       LOCAL      56         NoType     Defined   
+5     hardware_intr text       LOCAL      64         NoType     Defined   
+6     handler_out text       LOCAL      72         NoType     Defined   
+ld <immed>536870912, %r14
+ld <immed>handler, %r1
+int 
+div %r0, %r0
+halt 
+push %r1
+push %r2
+ld <immed>1, %r2
+beq %r1, %r2, <immed>hardware_intr
+ld <immed>4, %r2
+beq %r1, %r2, <immed>software_intr
+jmp %r0, %r0, <immed>handler_out
+ld <immed>-559038737, %r10
+jmp %r0, %r0, <immed>handler_out
+ld <immed>-17974594, %r11
+jmp %r0, %r0, <immed>handler_out
+pop %r2
+pop %r1
+MACHINE CODE:
+Section index = 1
+Section size = 136
+92 ef 00 58 92 1f 00 58
+94 11 00 00 10 00 00 00
+53 00 00 00 00 00 00 00
+81 e0 1f fc 81 e0 2f fc
+90 12 00 00 92 2f 00 3c
+39 f1 20 3c 92 2f 00 3c
+39 f1 20 3c 38 f0 00 3c
+92 af 00 3c 38 f0 00 3c
+92 bf 00 3c 38 f0 00 3c
+93 2e 00 04 93 1e 00 04
+91 ee 00 08 96 0e 0f fc
+92 fe 0f f8 00 00 00 20
+00 00 00 00 01 00 00 00
+00 00 00 00 04 00 00 00
+00 00 00 00 00 00 00 00
+ef be ad de 00 00 00 00
+be ba ed fe 00 00 00 00
+
+RELOCATIONS:
+Offset     Type       Symbol     Addend
+96         DATA32     text       24   
+104        DATA32     text       64   
+112        DATA32     text       56   
+116        DATA32     text       72   
+124        DATA32     text       72   
+132        DATA32     text       72   
+
+Section text, start = 40000000, end = 40000088
+Emulator loading:
+40000000: 92 ef 00 58 92 1f 00 58 
+40000008: 94 11 00 00 10 00 00 00 
+40000010: 53 00 00 00 00 00 00 00 
+40000018: 81 e0 1f fc 81 e0 2f fc 
+40000020: 90 12 00 00 92 2f 00 3c 
+40000028: 39 f1 20 3c 92 2f 00 3c 
+40000030: 39 f1 20 3c 38 f0 00 3c 
+40000038: 92 af 00 3c 38 f0 00 3c 
+40000040: 92 bf 00 3c 38 f0 00 3c 
+40000048: 93 2e 00 04 93 1e 00 04 
+40000050: 91 ee 00 08 96 0e 0f fc 
+40000058: 92 fe 0f f8 00 00 00 20 
+40000060: 18 00 00 40 01 00 00 00 
+40000068: 40 00 00 40 04 00 00 00 
+40000070: 38 00 00 40 48 00 00 40 
+40000078: ef be ad de 48 00 00 40 
+40000080: be ba ed fe 48 00 00 40 
+Hex file loaded successfully.
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000000 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000004 
+Status   = 00000000           Handler  = 00000000           Cause    = 00000000           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000008 
+Status   = 00000000           Handler  = 00000000           Cause    = 00000000           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 4000000c 
+Status   = 00000000           Handler  = 40000018           Cause    = 00000000           
+Instruction INSTR_INT executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000010 
+Status   = 00000000           Handler  = 40000018           Cause    = 00000000           
+Instruction INSTR_STORE executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff4 r15 = 4000001c 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_STORE executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000020 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000004 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000024 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000004 r2  = 00000001 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000028 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_JMP executed.
+r0  = 00000000 r1  = 00000004 r2  = 00000001 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 4000002c 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000004 r2  = 00000004 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000030 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_JMP executed.
+r0  = 00000000 r1  = 00000004 r2  = 00000004 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = 00000000 r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000038 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000004 r2  = 00000004 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 4000003c 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_JMP executed.
+r0  = 00000000 r1  = 00000004 r2  = 00000004 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000048 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000004 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff4 r15 = 4000004c 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff8 r15 = 40000050 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000054 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000058 
+Status   = 00000000           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000010 
+Status   = 00000000           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_ARITH executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000014 
+Status   = 00000000           Handler  = 40000018           Cause    = 00000004           
+Instruction INSTR_STORE executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff4 r15 = 4000001c 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_STORE executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000020 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000001 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000024 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000001 r2  = 00000001 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000028 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_JMP executed.
+r0  = 00000000 r1  = 00000001 r2  = 00000001 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = 00000000 r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000040 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000001 r2  = 00000001 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = feedbabe r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000044 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_JMP executed.
+r0  = 00000000 r1  = 00000001 r2  = 00000001 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = feedbabe r12 = 00000000 r13 = 00000000 r14 = 1ffffff0 r15 = 40000048 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 00000001 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = feedbabe r12 = 00000000 r13 = 00000000 r14 = 1ffffff4 r15 = 4000004c 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = feedbabe r12 = 00000000 r13 = 00000000 r14 = 1ffffff8 r15 = 40000050 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = feedbabe r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000054 
+Status   = 00000007           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = feedbabe r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000058 
+Status   = 00000000           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_LOAD executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = feedbabe r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000014 
+Status   = 00000000           Handler  = 40000018           Cause    = 00000001           
+Instruction INSTR_HALT executed.
+r0  = 00000000 r1  = 40000018 r2  = 00000000 r3  = 00000000 r4  = 00000000 r5  = 00000000 r6  = 00000000 r7  = 00000000 
+r8  = 00000000 r9  = 00000000 r10 = deadbeef r11 = feedbabe r12 = 00000000 r13 = 00000000 r14 = 20000000 r15 = 40000018 
+Status   = 00000000           Handler  = 40000018           Cause    = 00000001           
+Program executed sucessfully
+
+Memory content:
+40000000: 92 ef 00 58 92 1f 00 58 94 11 00 00 10 00 00 00 
+40000010: 53 00 00 00 00 00 00 00 81 e0 1f fc 81 e0 2f fc 
+40000020: 90 12 00 00 92 2f 00 3c 39 f1 20 3c 92 2f 00 3c 
+40000030: 39 f1 20 3c 38 f0 00 3c 92 af 00 3c 38 f0 00 3c 
+40000040: 92 bf 00 3c 38 f0 00 3c 93 2e 00 04 93 1e 00 04 
+40000050: 91 ee 00 08 96 0e 0f fc 92 fe 0f f8 00 00 00 20 
+40000060: 18 00 00 40 01 00 00 00 40 00 00 40 04 00 00 00 
+40000070: 38 00 00 40 48 00 00 40 ef be ad de 48 00 00 40 
+40000080: be ba ed fe 48 00 00 40 00 00 00 00 00 00 00 00 
+
+Processor registers:
+r0  = 00000000
+r1  = 40000018
+r2  = 00000000
+r3  = 00000000
+r4  = 00000000
+r5  = 00000000
+r6  = 00000000
+r7  = 00000000
+r8  = 00000000
+r9  = 00000000
+r10 = deadbeef
+r11 = feedbabe
+r12 = 00000000
+r13 = 00000000
+r14 = 20000000
+r15 = 40000018
+

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 
 typedef unsigned char Byte;
 
@@ -16,12 +17,19 @@ typedef enum {
     EMU_STATUS_LOAD_FAILED,
     EMU_STATUS_RUNNING,
     EMU_STATUS_FINISHED,
+    EMU_STATUS_SOFTWARE_INTERRUPT,
+    EMU_STATUS_TERM_IN_INTERRUPT,
+    EMU_STATUS_TIMER_INTERRUPT,
     EMU_STATUS_BUS_ERROR, /* when accessing misaligned memory */
     EMU_STATUS_BAD_OP,
     EMU_STATUS_BAD_MOD,
     EMU_STATUS_DIV_BY_ZERO, 
     EMU_STATUS_COUNT
 }Status;
+
+#define STATUS_TERM_IN_BIT (1 << 0)
+#define STATUS_TIMER_BIT (1 << 1)
+#define STATUS_INTERRUPT_BIT (1 << 2)
 
 // Instruction type (1st byte)
 typedef enum {
@@ -61,7 +69,8 @@ typedef enum {
     ARITH_ADD = 0x0,           // gpr[A]<=gpr[B] + gpr[C];
     ARITH_SUB = 0x1,           // gpr[A]<=gpr[B] - gpr[C];
     ARITH_MUL = 0x2,           // gpr[A]<=gpr[B] * gpr[C];
-    ARITH_DIV = 0x3            // gpr[A]<=gpr[B] / gpr[C];
+    ARITH_DIV = 0x3,           // gpr[A]<=gpr[B] / gpr[C];
+    ARITH_MOD = 0x4,           // gpr[A]<=gpr[B] % gpr[C];
 } ArithModifier;
 
 // Modifiers for logic operations
@@ -97,7 +106,7 @@ typedef enum {
     LOAD_CSR_MEM_POSTINC = 0x7    // csr[A]<=mem32[gpr[B]]; gpr[B]<=gpr[B]+D;
 } LoadModifier;
 
-#define FRAME_SIZE 0x1000
+#define FRAME_SIZE 0x10000
 #define PMT1_SIZE 0x100
 #define PMT2_SIZE 0x100
 
@@ -105,10 +114,16 @@ typedef Byte MemFrame [FRAME_SIZE];
 typedef MemFrame* pmt1[PMT1_SIZE];
 typedef pmt1* pmt2[PMT2_SIZE];
 
+typedef struct Timer{
+    clock_t set_time;
+    clock_t start_time;
+}Timer;
+
 typedef struct Emulator{
     Processor cpu;
     pmt2 mem;
     Status status;
+    Timer timer;
 }Emulator;
 
 Emulator emulatorCreate();

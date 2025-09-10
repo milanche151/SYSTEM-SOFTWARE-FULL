@@ -3,15 +3,20 @@
 #include "parser.tab.h"
 #include <stdio.h>
 #include <string.h>
+
+int curr_line = 1;
+
 %}
 %option noyywrap
 %%
 [ \t];
 
-
+"FUNC" {return FUNC;}
+"OBJ" {return OBJ;}
 ".global" {return GLOBAL;}
 ".extern" {return EXTERN;}
 ".section" {return SECTION;}
+".type" {return TYPE;}
 ".word" {return WORD;}
 ".skip" {return SKIP;}
 ".equ" {return EQU;}
@@ -33,6 +38,7 @@ add {return ADD;}
 sub {return SUB;}
 mul {return MUL;}
 div {return DIV;}
+mod {return MOD;}
 not {return NOT;}
 and {return AND;}
 or {return OR;}
@@ -48,12 +54,15 @@ csrwr {return CSRWR;}
 "%status" {yylval.number=0;return SREG;}
 " " { }
 % {return '%';}
-\n {return ENDL;}
+"+" { return '+'; }
+"-" { return '-'; }
+
+\n {curr_line++; return ENDL;}
 [-]?[0-9]+ {yylval.number=atoi(yytext);return NUM;}
 : {return ':' ;}
 , {yylval.string=strdup(yytext);return ',' ;}
 [a-zA-Z_][a-zA-Z_0-9]* {yylval.string=strdup(yytext);return SYMBOL;}
-\"[a-zA-Z_0-9]*\" { yylval.string=strdup(yytext); return STRING; }
+\"([a-zA-Z_0-9 ]|"\\n")*\" { yylval.string=strdup(yytext); return STRING; }
 "$" {return '$';}
 [0][x][A-Fa-f0-9]+ {sscanf(yytext,"%x",&yylval.number);return NUM;}
 "%sp" { yylval.number=14; return REG; }
@@ -61,7 +70,6 @@ csrwr {return CSRWR;}
 %r(0|1|2|3|4|5|6|7|8|9|"10"|"11"|"12"|"13"|"14"|"15") {yylval.number=atoi(yytext+2);return REG;}
 "[" {return '[';}
 "]" {return ']';}
-"+" {return '+';}
 [#][^\n]* ;
 . {printf("ERROR UNRECOGNIZED ELEMENT %s", yytext);exit(-1);}
 %%
