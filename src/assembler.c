@@ -480,19 +480,26 @@ void insertGenericInstruction(struct Assembler *assembler, int opcode, int modif
   VecBytePush(&current_section->machineCode, (gprC   << 4) & 0xf0 | (disp     >> 8) & 0x0f);
   VecBytePush(&current_section->machineCode, (disp   >> 0) & 0xff);
 }
-
+#define ZERO_MODIFIER 0
 void instructionNoop(struct Assembler *assembler, InstrType instr_type){
-  const InstrDesc* desc = instr_descs+instr_type;
-  assert(desc->family==INSTR_FAMILY_NOOP);
+  InstructionOpcode curr_opcode;
+  if(instr_type == INSTR_HALT)
+    curr_opcode = ASM_INSTR_HALT;
+
+  else if(instr_type == INSTR_INT)
+    curr_opcode = ASM_INSTR_INT;
+  else
+    assert(0);
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
 
-    insertGenericInstruction(assembler, desc->opcode, desc->modifier, 0, 0, 0, 0);
+    insertGenericInstruction(assembler, curr_opcode, ZERO_MODIFIER, 0, 0, 0, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
-        .type=instr_type
+      .type = instr_type,
+      .family = INSTR_FAMILY_NOOP,
       }
     };
     VecLinePush(&current_section->lines,line);
@@ -530,17 +537,17 @@ void instructionIret(struct Assembler *assembler){
 }
 
 void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int reg){
-  const InstrDesc* desc = instr_descs+instr_type;
-  assert(desc->family==INSTR_FAMILY_ONEREG);
-
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
 
     if(instr_type == INSTR_PUSH){
-      insertGenericInstruction(assembler, desc->opcode, desc->modifier, REGISTER_SP, 0, reg, -STACK_DISP);
+      insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_REG_INDIRECT_PREINC, REGISTER_SP, 0, reg, -STACK_DISP);
     }
     else if(instr_type == INSTR_POP){
-      insertGenericInstruction(assembler, desc->opcode, desc->modifier, reg, REGISTER_SP, 0, +STACK_DISP);
+      insertGenericInstruction(assembler, ASM_INSTR_LOAD, ASM_LOAD_MEM_INDIRECT_POSTINC, reg, REGISTER_SP, 0, +STACK_DISP);
+    }
+    else if(instr_type == INSTR_NOT){
+      insertGenericInstruction(assembler, ASM_INSTR_LOGIC, ASM_LOGIC_NOT , reg, REGISTER_ZERO, REGISTER_ZERO, 0);
     }
     else assert(0);
 
@@ -548,6 +555,7 @@ void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int re
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
         .type=instr_type,
+        .family = INSTR_FAMILY_ONEREG,
         .reg1 = reg,
       }
     };
@@ -560,18 +568,67 @@ void instructionOnereg(struct Assembler *assembler, InstrType instr_type, int re
 }
 
 void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int regS, int regD){
-  const InstrDesc* desc = instr_descs+instr_type;
-  assert(desc->family==INSTR_FAMILY_TWOREG);
-
+  InstructionOpcode curr_opcode;
+  unsigned int modifier;
+  switch (instr_type)
+  {
+  case INSTR_XCHG:
+    curr_opcode = ASM_INSTR_XCHG;
+    modifier = ZERO_MODIFIER;
+    break;
+  case INSTR_ADD:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_ADD;
+    break;
+  case INSTR_SUB:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_SUB;
+    break;
+  case INSTR_MUL:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_MUL;
+    break;
+  case INSTR_DIV:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_DIV;
+    break;
+  case INSTR_MOD:
+    curr_opcode = ASM_INSTR_ARITH;
+    modifier = ASM_ARITH_MOD;
+    break;
+  case INSTR_AND:
+    curr_opcode = ASM_INSTR_LOGIC;
+    modifier = ASM_LOGIC_AND;
+    break;
+  case INSTR_OR:
+    curr_opcode = ASM_INSTR_LOGIC;
+    modifier = ASM_LOGIC_OR;
+    break;
+  case INSTR_XOR:
+    curr_opcode = ASM_INSTR_LOGIC;
+    modifier = ASM_LOGIC_XOR;
+    break;
+  case INSTR_SHL:
+    curr_opcode = ASM_INSTR_SHIFT;
+    modifier = ASM_SHIFT_LEFT;
+    break;
+  case INSTR_SHR:
+    curr_opcode = ASM_INSTR_SHIFT;
+    modifier = ASM_SHIFT_RIGHT;
+    break;  
+  default:
+    assert(0);
+  }
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
     
-    insertGenericInstruction(assembler, desc->opcode, desc->modifier, regD, regD, regS, 0);
+    insertGenericInstruction(assembler, curr_opcode, modifier, regD, regD, regS, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
         .type=instr_type,
+        .family = INSTR_FAMILY_TWOREG,
         .reg1 = regS,
         .reg2 = regD,
       }
@@ -589,8 +646,13 @@ static bool canFitIn12bit(int dist){
 }
 
 void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Operand operand, int regD){
-  const InstrDesc *desc = instr_descs+instrType;
-  assert(desc->family == INSTR_FAMILY_LD || desc->family == INSTR_FAMILY_STR);
+  InstructionOpcode curr_opcode;
+  if(instrType == INSTR_LD)
+    curr_opcode = ASM_INSTR_LOAD;
+  else if(instrType == INSTR_STR)
+    curr_opcode = ASM_INSTR_STORE;
+  else
+    assert(0);
 
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
@@ -647,28 +709,28 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
     if(instrType == INSTR_LD){
       switch(operand.type){
       case OPERAND_TYPE_IMMED_LIT:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, REGISTER_PC, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_IMMED_SYM:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, REGISTER_PC, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_MEMDIR_LIT:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, regD, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, regD, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_MEMDIR_SYM: 
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, REGISTER_PC, REGISTER_ZERO, 0);
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, regD, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, REGISTER_PC, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, regD, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGDIR:
-        insertGenericInstruction(assembler, desc->opcode, 0x01, regD, operand.reg, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_REG_DISP, regD, operand.reg, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGIND:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, regD, operand.reg, REGISTER_ZERO, 0);
+        insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, operand.reg, REGISTER_ZERO, 0);
         break;
       case OPERAND_TYPE_REGIND_LIT:
         if(canFitIn12bit(operand.literal)){
-          insertGenericInstruction(assembler, desc->opcode, 0x02, regD, operand.reg, REGISTER_ZERO, operand.literal);
+          insertGenericInstruction(assembler, curr_opcode, ASM_LOAD_MEM_INDIRECT, regD, operand.reg, REGISTER_ZERO, operand.literal);
         }
         else {
           printf("Literal can't fit 12bit size.\n");
@@ -690,21 +752,21 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
         assembler->correct = false;
         break;
       case OPERAND_TYPE_MEMDIR_LIT:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, REGISTER_PC, REGISTER_ZERO, regD, 0);
+        insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_MEM_INDIRECT, REGISTER_PC, REGISTER_ZERO, regD, 0);
         break;
       case OPERAND_TYPE_MEMDIR_SYM:
-        insertGenericInstruction(assembler, desc->opcode, 0x02, REGISTER_PC, REGISTER_ZERO, regD, 0);
+        insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_MEM_INDIRECT, REGISTER_PC, REGISTER_ZERO, regD, 0);
         break;
       case OPERAND_TYPE_REGDIR:
         printf("STR REGDIR not allowed\n");
         assembler->correct = false;
         break;
       case OPERAND_TYPE_REGIND:
-        insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, operand.reg, regD, 0);
+        insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_REG_INDIRECT, REGISTER_ZERO, operand.reg, regD, 0);
         break;
       case OPERAND_TYPE_REGIND_LIT:
         if(canFitIn12bit(operand.literal)){
-          insertGenericInstruction(assembler, desc->opcode, 0x00, REGISTER_ZERO, operand.reg, regD, operand.literal);
+          insertGenericInstruction(assembler, ASM_INSTR_STORE, ASM_STORE_REG_INDIRECT, REGISTER_ZERO, operand.reg, regD, operand.literal);
         }
         else {
           printf("Literal can't fit 12bit size.\n");
@@ -725,6 +787,7 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
         .type = instrType,
+        .family = instrType = INSTR_LD ? INSTR_FAMILY_LD : INSTR_FAMILY_STR,
         .operand = operand,
         .reg1 = regD,
       }
@@ -737,18 +800,28 @@ void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Opera
   }
 }
 
-void instructionCSRReadWrite(struct Assembler *assembler, InstrType instr_type, int regGPR, int regCSR){
-  const InstrDesc *desc = instr_descs+instr_type;
-  assert(desc->family == INSTR_FAMILY_CSRRD || desc->family == INSTR_FAMILY_CSRWR);
+void instructionCSRReadWrite(struct Assembler *assembler, InstrType instrType, int regGPR, int regCSR){
+  InstructionOpcode curr_opcode;
+  LoadModifier curr_modifier;
+  if(instrType == INSTR_CSRRD){
+    curr_opcode = ASM_INSTR_LOAD;
+    curr_modifier = ASM_LOAD_CSR;
+  }
+  else if(instrType == INSTR_CSRWR){
+    curr_opcode = ASM_INSTR_LOAD;
+    curr_modifier = ASM_LOAD_CSR_FROM_REG;
+  }
+  else
+    assert(0);
 
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
 
-    if(instr_type == INSTR_CSRRD){
-      insertGenericInstruction(assembler, desc->opcode, desc->modifier, regGPR, regCSR, 0, 0);
+    if(instrType == INSTR_CSRRD){
+      insertGenericInstruction(assembler, curr_opcode, curr_modifier, regGPR, regCSR, REGISTER_ZERO, 0);
     }
-    else if(instr_type == INSTR_CSRWR){
-      insertGenericInstruction(assembler, desc->opcode, desc->modifier, regCSR, regGPR, 0, 0);
+    else if(instrType == INSTR_CSRWR){
+      insertGenericInstruction(assembler, curr_opcode, curr_modifier, regCSR, regGPR, REGISTER_ZERO, 0);
     }
     else assert(0);
   }
@@ -759,8 +832,29 @@ void instructionCSRReadWrite(struct Assembler *assembler, InstrType instr_type, 
 }
 
 void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand){
-  const InstrDesc *desc = instr_descs+instrType;
-  assert(desc->family == INSTR_FAMILY_TWOREG_ONEOP);
+  unsigned int curr_opcode = ASM_INSTR_JMP;
+  LoadModifier curr_modifier;
+  switch (instrType)
+  {
+  case INSTR_JMP:
+    curr_modifier = ASM_JMP_MEM_UNCONDITIONAL;
+    break;
+  case INSTR_BEQ:
+    curr_modifier = ASM_JMP_MEM_EQ;
+    break;
+  case INSTR_BNE:
+    curr_modifier = ASM_JMP_MEM_NE;
+    break;
+  case INSTR_BGT:
+    curr_modifier = ASM_JMP_MEM_GT;
+    break;
+  case INSTR_CALL:
+    curr_modifier = ASM_CALL_MEM_INDIRECT;
+    curr_opcode = ASM_INSTR_CALL;
+    break; 
+  default:
+    assert(0);
+  }
 
   if(assembler->sections.size > 0){
     Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
@@ -790,13 +884,14 @@ void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1,
     }
 
     //insert code
-    insertGenericInstruction(assembler, desc->opcode, desc->modifier, REGISTER_PC, reg1, reg2, 0);
+    insertGenericInstruction(assembler, curr_opcode, curr_modifier, REGISTER_PC, reg1, reg2, 0);
 
     Line line ={
       .type = LINE_TYPE_INSTRUCITON,
       .instruction = {
         .type = instrType,
         .operand = operand,
+        .family = INSTR_FAMILY_TWOREG_ONEOP,
         .reg1 = reg1,
         .reg2 = reg2,
       }
@@ -902,6 +997,35 @@ static void linePrint(const Line* line){
     [DIRECTIVE_TYPE_SKIP]  = ".skip",
     [DIRECTIVE_TYPE_ASCII] = ".ascii",
   };
+  static const char *instrNames[] = {
+    [INSTR_HALT]="HALT",
+    [INSTR_INT]="INT",
+    [INSTR_RET]="RET",
+    [INSTR_IRET]="IRET",
+    [INSTR_CALL]="CALL",
+    [INSTR_JMP]="JMP",
+    [INSTR_BEQ]="BEQ",
+    [INSTR_BNE]="BNE",
+    [INSTR_BGT]="BGT",
+    [INSTR_PUSH]="PUSH",
+    [INSTR_POP]="POP",
+    [INSTR_NOT]="NOT",
+    [INSTR_XCHG]="XCHG",
+    [INSTR_ADD]="ADD",
+    [INSTR_SUB]="SUB",
+    [INSTR_MUL]="MUL",
+    [INSTR_DIV]="DIV",
+    [INSTR_MOD]="MOD",
+    [INSTR_AND]="AND",
+    [INSTR_OR]="OR",
+    [INSTR_XOR]="XOR",
+    [INSTR_SHL]="SHL",
+    [INSTR_SHR]="SHR",
+    [INSTR_LD]="LD",
+    [INSTR_STR]="STR",
+    [INSTR_CSRRD]="CSRRD",
+    [INSTR_CSRWR]="CSRWR",
+  };
   switch (line->type)
   {
   case LINE_TYPE_DIRECTIVE:
@@ -921,9 +1045,9 @@ static void linePrint(const Line* line){
     }
     break;
   case LINE_TYPE_INSTRUCITON: {
-    const InstrDesc *desc = &instr_descs[line->instruction.type];
-    printf("%s ", desc->name);
-    switch(desc->family){
+   
+    printf("%s ", instrNames[line->instruction.type]);
+    switch(line->instruction.family){
     case INSTR_FAMILY_NOOP:
       break;
     case INSTR_FAMILY_ONEREG:

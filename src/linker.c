@@ -325,7 +325,7 @@ void LinkerHandleRelocations(Linker *linker){
         }
 
         switch(curr_reloc->type){
-        case RELOCATION_TYPE_DATA32:
+        case RELOCATION_TYPE_DATA32:{
 
           // patch the value, little-endian
           const SymTableRow *symbol = &curr_file->symbols[curr_reloc->symbolIndex];
@@ -338,7 +338,7 @@ void LinkerHandleRelocations(Linker *linker){
           patch_bytes[1] = value >>  8;
           patch_bytes[2] = value >> 16;
           patch_bytes[3] = value >> 24;
-
+        }
           break;
         default: assert(0);
         }

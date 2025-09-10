@@ -2,7 +2,6 @@ Terminals unused in grammar
 
     COLON
     SKIP
-    XCHG
 
 
 Grammar
@@ -81,20 +80,21 @@ Grammar
    59              | AND
    60              | XOR
    61              | OR
+   62              | XCHG
 
-   62 jmp_opcode: BEQ
-   63           | BNE
-   64           | BGT
+   63 jmp_opcode: BEQ
+   64           | BNE
+   65           | BGT
 
-   65 label: SYMBOL ':'
+   66 label: SYMBOL ':'
 
-   66 SYMLIST: SYMBOL
-   67        | SYMLIST ',' SYMBOL
+   67 SYMLIST: SYMBOL
+   68        | SYMLIST ',' SYMBOL
 
-   68 EXPR_LIST: SYMBOL
-   69          | NUM
-   70          | EXPR_LIST ',' SYMBOL
-   71          | EXPR_LIST ',' NUM
+   69 EXPR_LIST: SYMBOL
+   70          | NUM
+   71          | EXPR_LIST ',' SYMBOL
+   72          | EXPR_LIST ',' NUM
 
 
 Terminals, with rules where they appear
@@ -102,9 +102,9 @@ Terminals, with rules where they appear
     $end (0) 0
     '$' (36) 40 41
     '+' (43) 21 46 47
-    ',' (44) 17 34 35 36 37 38 39 67 70 71
+    ',' (44) 17 34 35 36 37 38 39 68 71 72
     '-' (45) 22
-    ':' (58) 65
+    ':' (58) 66
     '[' (91) 45 46 47
     ']' (93) 45 46 47
     error (256)
@@ -124,12 +124,12 @@ Terminals, with rules where they appear
     CALL (271) 32
     RET (272) 27
     JMP (273) 33
-    BEQ (274) 62
-    BNE (275) 63
-    BGT (276) 64
+    BEQ (274) 63
+    BNE (275) 64
+    BGT (276) 65
     PUSH (277) 29
     POP (278) 30
-    XCHG (279)
+    XCHG (279) 62
     ADD (280) 52
     SUB (281) 53
     MUL (282) 54
@@ -148,9 +148,9 @@ Terminals, with rules where they appear
     FUNC (295) 19
     OBJ (296) 20
     TYPE (297) 13
-    SYMBOL <string> (298) 11 13 17 24 41 43 47 49 65 66 67 68 70
+    SYMBOL <string> (298) 11 13 17 24 41 43 47 49 66 67 68 69 71
     STRING <string> (299) 16
-    NUM <number> (300) 25 40 42 46 48 69 71
+    NUM <number> (300) 25 40 42 46 48 70 72
     REG <number> (301) 29 30 31 34 35 36 37 38 39 44 45 46 47
     SREG <number> (302) 38 39
 
@@ -193,25 +193,25 @@ Nonterminals, with rules where they appear
         on left: 50 51
         on right: 26
     tworeg_opcode <instrType> (67)
-        on left: 52 53 54 55 56 57 58 59 60 61
+        on left: 52 53 54 55 56 57 58 59 60 61 62
         on right: 35
     jmp_opcode <instrType> (68)
-        on left: 62 63 64
+        on left: 63 64 65
         on right: 34
     label (69)
-        on left: 65
+        on left: 66
         on right: 6 7 9
     SYMLIST <stringvec> (70)
-        on left: 66 67
-        on right: 12 15 67
+        on left: 67 68
+        on right: 12 15 68
     EXPR_LIST <exprvec> (71)
-        on left: 68 69 70 71
-        on right: 14 70 71
+        on left: 69 70 71 72
+        on right: 14 71 72
 
 
 State 0
 
-    0 $accept: • program $end
+    0 $accept: . program $end
 
     GLOBAL   shift, and go to state 1
     EXTERN   shift, and go to state 2
@@ -232,371 +232,379 @@ State 0
     BGT      shift, and go to state 17
     PUSH     shift, and go to state 18
     POP      shift, and go to state 19
-    ADD      shift, and go to state 20
-    SUB      shift, and go to state 21
-    MUL      shift, and go to state 22
-    DIV      shift, and go to state 23
-    MOD      shift, and go to state 24
-    NOT      shift, and go to state 25
-    AND      shift, and go to state 26
-    OR       shift, and go to state 27
-    XOR      shift, and go to state 28
-    SHL      shift, and go to state 29
-    SHR      shift, and go to state 30
-    LD       shift, and go to state 31
-    ST       shift, and go to state 32
-    CSRRD    shift, and go to state 33
-    CSRWR    shift, and go to state 34
-    TYPE     shift, and go to state 35
-    SYMBOL   shift, and go to state 36
+    XCHG     shift, and go to state 20
+    ADD      shift, and go to state 21
+    SUB      shift, and go to state 22
+    MUL      shift, and go to state 23
+    DIV      shift, and go to state 24
+    MOD      shift, and go to state 25
+    NOT      shift, and go to state 26
+    AND      shift, and go to state 27
+    OR       shift, and go to state 28
+    XOR      shift, and go to state 29
+    SHL      shift, and go to state 30
+    SHR      shift, and go to state 31
+    LD       shift, and go to state 32
+    ST       shift, and go to state 33
+    CSRRD    shift, and go to state 34
+    CSRWR    shift, and go to state 35
+    TYPE     shift, and go to state 36
+    SYMBOL   shift, and go to state 37
 
-    program        go to state 37
-    lines          go to state 38
-    line           go to state 39
-    directive      go to state 40
-    instruction    go to state 41
-    noop_opcode    go to state 42
-    tworeg_opcode  go to state 43
-    jmp_opcode     go to state 44
-    label          go to state 45
+    program        go to state 38
+    lines          go to state 39
+    line           go to state 40
+    directive      go to state 41
+    instruction    go to state 42
+    noop_opcode    go to state 43
+    tworeg_opcode  go to state 44
+    jmp_opcode     go to state 45
+    label          go to state 46
 
 
 State 1
 
-   12 directive: GLOBAL • SYMLIST
+   12 directive: GLOBAL . SYMLIST
 
-    SYMBOL  shift, and go to state 46
-
-    SYMLIST  go to state 47
-
-
-State 2
-
-   15 directive: EXTERN • SYMLIST
-
-    SYMBOL  shift, and go to state 46
+    SYMBOL  shift, and go to state 47
 
     SYMLIST  go to state 48
 
 
+State 2
+
+   15 directive: EXTERN . SYMLIST
+
+    SYMBOL  shift, and go to state 47
+
+    SYMLIST  go to state 49
+
+
 State 3
 
-    5 lines: ENDL •
+    5 lines: ENDL .
 
     $default  reduce using rule 5 (lines)
 
 
 State 4
 
-   11 directive: SECTION • SYMBOL
+   11 directive: SECTION . SYMBOL
 
-    SYMBOL  shift, and go to state 49
+    SYMBOL  shift, and go to state 50
 
 
 State 5
 
-   14 directive: WORD • EXPR_LIST
+   14 directive: WORD . EXPR_LIST
 
-    SYMBOL  shift, and go to state 50
-    NUM     shift, and go to state 51
+    SYMBOL  shift, and go to state 51
+    NUM     shift, and go to state 52
 
-    EXPR_LIST  go to state 52
+    EXPR_LIST  go to state 53
 
 
 State 6
 
-   16 directive: ASCII • STRING
+   16 directive: ASCII . STRING
 
-    STRING  shift, and go to state 53
+    STRING  shift, and go to state 54
 
 
 State 7
 
-   17 directive: EQU • SYMBOL ',' equ_expr
+   17 directive: EQU . SYMBOL ',' equ_expr
 
-    SYMBOL  shift, and go to state 54
+    SYMBOL  shift, and go to state 55
 
 
 State 8
 
-   18 directive: END •
+   18 directive: END .
 
     $default  reduce using rule 18 (directive)
 
 
 State 9
 
-   50 noop_opcode: HALT •
+   50 noop_opcode: HALT .
 
     $default  reduce using rule 50 (noop_opcode)
 
 
 State 10
 
-   51 noop_opcode: INT •
+   51 noop_opcode: INT .
 
     $default  reduce using rule 51 (noop_opcode)
 
 
 State 11
 
-   28 instruction: IRET •
+   28 instruction: IRET .
 
     $default  reduce using rule 28 (instruction)
 
 
 State 12
 
-   32 instruction: CALL • jmp_operand
+   32 instruction: CALL . jmp_operand
 
-    SYMBOL  shift, and go to state 55
-    NUM     shift, and go to state 56
+    SYMBOL  shift, and go to state 56
+    NUM     shift, and go to state 57
 
-    jmp_operand  go to state 57
+    jmp_operand  go to state 58
 
 
 State 13
 
-   27 instruction: RET •
+   27 instruction: RET .
 
     $default  reduce using rule 27 (instruction)
 
 
 State 14
 
-   33 instruction: JMP • jmp_operand
+   33 instruction: JMP . jmp_operand
 
-    SYMBOL  shift, and go to state 55
-    NUM     shift, and go to state 56
+    SYMBOL  shift, and go to state 56
+    NUM     shift, and go to state 57
 
-    jmp_operand  go to state 58
+    jmp_operand  go to state 59
 
 
 State 15
 
-   62 jmp_opcode: BEQ •
-
-    $default  reduce using rule 62 (jmp_opcode)
-
-
-State 16
-
-   63 jmp_opcode: BNE •
+   63 jmp_opcode: BEQ .
 
     $default  reduce using rule 63 (jmp_opcode)
 
 
-State 17
+State 16
 
-   64 jmp_opcode: BGT •
+   64 jmp_opcode: BNE .
 
     $default  reduce using rule 64 (jmp_opcode)
 
 
+State 17
+
+   65 jmp_opcode: BGT .
+
+    $default  reduce using rule 65 (jmp_opcode)
+
+
 State 18
 
-   29 instruction: PUSH • REG
-
-    REG  shift, and go to state 59
-
-
-State 19
-
-   30 instruction: POP • REG
+   29 instruction: PUSH . REG
 
     REG  shift, and go to state 60
 
 
-State 20
+State 19
 
-   52 tworeg_opcode: ADD •
-
-    $default  reduce using rule 52 (tworeg_opcode)
-
-
-State 21
-
-   53 tworeg_opcode: SUB •
-
-    $default  reduce using rule 53 (tworeg_opcode)
-
-
-State 22
-
-   54 tworeg_opcode: MUL •
-
-    $default  reduce using rule 54 (tworeg_opcode)
-
-
-State 23
-
-   55 tworeg_opcode: DIV •
-
-    $default  reduce using rule 55 (tworeg_opcode)
-
-
-State 24
-
-   56 tworeg_opcode: MOD •
-
-    $default  reduce using rule 56 (tworeg_opcode)
-
-
-State 25
-
-   31 instruction: NOT • REG
+   30 instruction: POP . REG
 
     REG  shift, and go to state 61
 
 
+State 20
+
+   62 tworeg_opcode: XCHG .
+
+    $default  reduce using rule 62 (tworeg_opcode)
+
+
+State 21
+
+   52 tworeg_opcode: ADD .
+
+    $default  reduce using rule 52 (tworeg_opcode)
+
+
+State 22
+
+   53 tworeg_opcode: SUB .
+
+    $default  reduce using rule 53 (tworeg_opcode)
+
+
+State 23
+
+   54 tworeg_opcode: MUL .
+
+    $default  reduce using rule 54 (tworeg_opcode)
+
+
+State 24
+
+   55 tworeg_opcode: DIV .
+
+    $default  reduce using rule 55 (tworeg_opcode)
+
+
+State 25
+
+   56 tworeg_opcode: MOD .
+
+    $default  reduce using rule 56 (tworeg_opcode)
+
+
 State 26
 
-   59 tworeg_opcode: AND •
+   31 instruction: NOT . REG
 
-    $default  reduce using rule 59 (tworeg_opcode)
+    REG  shift, and go to state 62
 
 
 State 27
 
-   61 tworeg_opcode: OR •
+   59 tworeg_opcode: AND .
 
-    $default  reduce using rule 61 (tworeg_opcode)
+    $default  reduce using rule 59 (tworeg_opcode)
 
 
 State 28
 
-   60 tworeg_opcode: XOR •
+   61 tworeg_opcode: OR .
 
-    $default  reduce using rule 60 (tworeg_opcode)
+    $default  reduce using rule 61 (tworeg_opcode)
 
 
 State 29
 
-   57 tworeg_opcode: SHL •
+   60 tworeg_opcode: XOR .
 
-    $default  reduce using rule 57 (tworeg_opcode)
+    $default  reduce using rule 60 (tworeg_opcode)
 
 
 State 30
 
-   58 tworeg_opcode: SHR •
+   57 tworeg_opcode: SHL .
 
-    $default  reduce using rule 58 (tworeg_opcode)
+    $default  reduce using rule 57 (tworeg_opcode)
 
 
 State 31
 
-   36 instruction: LD • operand ',' REG
+   58 tworeg_opcode: SHR .
 
-    SYMBOL  shift, and go to state 62
-    NUM     shift, and go to state 63
-    REG     shift, and go to state 64
-    '$'     shift, and go to state 65
-    '['     shift, and go to state 66
-
-    operand  go to state 67
+    $default  reduce using rule 58 (tworeg_opcode)
 
 
 State 32
 
-   37 instruction: ST • REG ',' operand
+   36 instruction: LD . operand ',' REG
 
-    REG  shift, and go to state 68
+    SYMBOL  shift, and go to state 63
+    NUM     shift, and go to state 64
+    REG     shift, and go to state 65
+    '$'     shift, and go to state 66
+    '['     shift, and go to state 67
+
+    operand  go to state 68
 
 
 State 33
 
-   38 instruction: CSRRD • SREG ',' REG
+   37 instruction: ST . REG ',' operand
 
-    SREG  shift, and go to state 69
+    REG  shift, and go to state 69
 
 
 State 34
 
-   39 instruction: CSRWR • REG ',' SREG
+   38 instruction: CSRRD . SREG ',' REG
 
-    REG  shift, and go to state 70
+    SREG  shift, and go to state 70
 
 
 State 35
 
-   13 directive: TYPE • SYMBOL type
+   39 instruction: CSRWR . REG ',' SREG
 
-    SYMBOL  shift, and go to state 71
+    REG  shift, and go to state 71
 
 
 State 36
 
-   65 label: SYMBOL • ':'
+   13 directive: TYPE . SYMBOL type
 
-    ':'  shift, and go to state 72
+    SYMBOL  shift, and go to state 72
 
 
 State 37
 
-    0 $accept: program • $end
+   66 label: SYMBOL . ':'
 
-    $end  shift, and go to state 73
+    ':'  shift, and go to state 73
 
 
 State 38
 
-    1 program: lines •
-    2 lines: lines • ENDL line
-    3      | lines • ENDL
+    0 $accept: program . $end
 
-    ENDL  shift, and go to state 74
-
-    $default  reduce using rule 1 (program)
+    $end  shift, and go to state 74
 
 
 State 39
 
-    4 lines: line •
+    1 program: lines .
+    2 lines: lines . ENDL line
+    3      | lines . ENDL
 
-    $default  reduce using rule 4 (lines)
+    ENDL  shift, and go to state 75
+
+    $default  reduce using rule 1 (program)
 
 
 State 40
 
-    8 line: directive •
+    4 lines: line .
 
-    $default  reduce using rule 8 (line)
+    $default  reduce using rule 4 (lines)
 
 
 State 41
 
-   10 line: instruction •
+    8 line: directive .
 
-    $default  reduce using rule 10 (line)
+    $default  reduce using rule 8 (line)
 
 
 State 42
 
-   26 instruction: noop_opcode •
+   10 line: instruction .
 
-    $default  reduce using rule 26 (instruction)
+    $default  reduce using rule 10 (line)
 
 
 State 43
 
-   35 instruction: tworeg_opcode • REG ',' REG
+   26 instruction: noop_opcode .
 
-    REG  shift, and go to state 75
+    $default  reduce using rule 26 (instruction)
 
 
 State 44
 
-   34 instruction: jmp_opcode • REG ',' REG ',' jmp_operand
+   35 instruction: tworeg_opcode . REG ',' REG
 
     REG  shift, and go to state 76
 
 
 State 45
 
-    6 line: label •
-    7     | label • directive
-    9     | label • instruction
+   34 instruction: jmp_opcode . REG ',' REG ',' jmp_operand
+
+    REG  shift, and go to state 77
+
+
+State 46
+
+    6 line: label .
+    7     | label . directive
+    9     | label . instruction
 
     GLOBAL   shift, and go to state 1
     EXTERN   shift, and go to state 2
@@ -616,249 +624,250 @@ State 45
     BGT      shift, and go to state 17
     PUSH     shift, and go to state 18
     POP      shift, and go to state 19
-    ADD      shift, and go to state 20
-    SUB      shift, and go to state 21
-    MUL      shift, and go to state 22
-    DIV      shift, and go to state 23
-    MOD      shift, and go to state 24
-    NOT      shift, and go to state 25
-    AND      shift, and go to state 26
-    OR       shift, and go to state 27
-    XOR      shift, and go to state 28
-    SHL      shift, and go to state 29
-    SHR      shift, and go to state 30
-    LD       shift, and go to state 31
-    ST       shift, and go to state 32
-    CSRRD    shift, and go to state 33
-    CSRWR    shift, and go to state 34
-    TYPE     shift, and go to state 35
+    XCHG     shift, and go to state 20
+    ADD      shift, and go to state 21
+    SUB      shift, and go to state 22
+    MUL      shift, and go to state 23
+    DIV      shift, and go to state 24
+    MOD      shift, and go to state 25
+    NOT      shift, and go to state 26
+    AND      shift, and go to state 27
+    OR       shift, and go to state 28
+    XOR      shift, and go to state 29
+    SHL      shift, and go to state 30
+    SHR      shift, and go to state 31
+    LD       shift, and go to state 32
+    ST       shift, and go to state 33
+    CSRRD    shift, and go to state 34
+    CSRWR    shift, and go to state 35
+    TYPE     shift, and go to state 36
 
     $default  reduce using rule 6 (line)
 
-    directive      go to state 77
-    instruction    go to state 78
-    noop_opcode    go to state 42
-    tworeg_opcode  go to state 43
-    jmp_opcode     go to state 44
-
-
-State 46
-
-   66 SYMLIST: SYMBOL •
-
-    $default  reduce using rule 66 (SYMLIST)
+    directive      go to state 78
+    instruction    go to state 79
+    noop_opcode    go to state 43
+    tworeg_opcode  go to state 44
+    jmp_opcode     go to state 45
 
 
 State 47
 
-   12 directive: GLOBAL SYMLIST •
-   67 SYMLIST: SYMLIST • ',' SYMBOL
+   67 SYMLIST: SYMBOL .
 
-    ','  shift, and go to state 79
-
-    $default  reduce using rule 12 (directive)
+    $default  reduce using rule 67 (SYMLIST)
 
 
 State 48
 
-   15 directive: EXTERN SYMLIST •
-   67 SYMLIST: SYMLIST • ',' SYMBOL
+   12 directive: GLOBAL SYMLIST .
+   68 SYMLIST: SYMLIST . ',' SYMBOL
 
-    ','  shift, and go to state 79
+    ','  shift, and go to state 80
 
-    $default  reduce using rule 15 (directive)
+    $default  reduce using rule 12 (directive)
 
 
 State 49
 
-   11 directive: SECTION SYMBOL •
+   15 directive: EXTERN SYMLIST .
+   68 SYMLIST: SYMLIST . ',' SYMBOL
 
-    $default  reduce using rule 11 (directive)
+    ','  shift, and go to state 80
+
+    $default  reduce using rule 15 (directive)
 
 
 State 50
 
-   68 EXPR_LIST: SYMBOL •
+   11 directive: SECTION SYMBOL .
 
-    $default  reduce using rule 68 (EXPR_LIST)
+    $default  reduce using rule 11 (directive)
 
 
 State 51
 
-   69 EXPR_LIST: NUM •
+   69 EXPR_LIST: SYMBOL .
 
     $default  reduce using rule 69 (EXPR_LIST)
 
 
 State 52
 
-   14 directive: WORD EXPR_LIST •
-   70 EXPR_LIST: EXPR_LIST • ',' SYMBOL
-   71          | EXPR_LIST • ',' NUM
+   70 EXPR_LIST: NUM .
 
-    ','  shift, and go to state 80
-
-    $default  reduce using rule 14 (directive)
+    $default  reduce using rule 70 (EXPR_LIST)
 
 
 State 53
 
-   16 directive: ASCII STRING •
+   14 directive: WORD EXPR_LIST .
+   71 EXPR_LIST: EXPR_LIST . ',' SYMBOL
+   72          | EXPR_LIST . ',' NUM
 
-    $default  reduce using rule 16 (directive)
+    ','  shift, and go to state 81
+
+    $default  reduce using rule 14 (directive)
 
 
 State 54
 
-   17 directive: EQU SYMBOL • ',' equ_expr
+   16 directive: ASCII STRING .
 
-    ','  shift, and go to state 81
+    $default  reduce using rule 16 (directive)
 
 
 State 55
 
-   49 jmp_operand: SYMBOL •
+   17 directive: EQU SYMBOL . ',' equ_expr
 
-    $default  reduce using rule 49 (jmp_operand)
+    ','  shift, and go to state 82
 
 
 State 56
 
-   48 jmp_operand: NUM •
+   49 jmp_operand: SYMBOL .
 
-    $default  reduce using rule 48 (jmp_operand)
+    $default  reduce using rule 49 (jmp_operand)
 
 
 State 57
 
-   32 instruction: CALL jmp_operand •
+   48 jmp_operand: NUM .
 
-    $default  reduce using rule 32 (instruction)
+    $default  reduce using rule 48 (jmp_operand)
 
 
 State 58
 
-   33 instruction: JMP jmp_operand •
+   32 instruction: CALL jmp_operand .
 
-    $default  reduce using rule 33 (instruction)
+    $default  reduce using rule 32 (instruction)
 
 
 State 59
 
-   29 instruction: PUSH REG •
+   33 instruction: JMP jmp_operand .
 
-    $default  reduce using rule 29 (instruction)
+    $default  reduce using rule 33 (instruction)
 
 
 State 60
 
-   30 instruction: POP REG •
+   29 instruction: PUSH REG .
 
-    $default  reduce using rule 30 (instruction)
+    $default  reduce using rule 29 (instruction)
 
 
 State 61
 
-   31 instruction: NOT REG •
+   30 instruction: POP REG .
 
-    $default  reduce using rule 31 (instruction)
+    $default  reduce using rule 30 (instruction)
 
 
 State 62
 
-   43 operand: SYMBOL •
+   31 instruction: NOT REG .
 
-    $default  reduce using rule 43 (operand)
+    $default  reduce using rule 31 (instruction)
 
 
 State 63
 
-   42 operand: NUM •
+   43 operand: SYMBOL .
 
-    $default  reduce using rule 42 (operand)
+    $default  reduce using rule 43 (operand)
 
 
 State 64
 
-   44 operand: REG •
+   42 operand: NUM .
 
-    $default  reduce using rule 44 (operand)
+    $default  reduce using rule 42 (operand)
 
 
 State 65
 
-   40 operand: '$' • NUM
-   41        | '$' • SYMBOL
+   44 operand: REG .
 
-    SYMBOL  shift, and go to state 82
-    NUM     shift, and go to state 83
+    $default  reduce using rule 44 (operand)
 
 
 State 66
 
-   45 operand: '[' • REG ']'
-   46        | '[' • REG '+' NUM ']'
-   47        | '[' • REG '+' SYMBOL ']'
+   40 operand: '$' . NUM
+   41        | '$' . SYMBOL
 
-    REG  shift, and go to state 84
+    SYMBOL  shift, and go to state 83
+    NUM     shift, and go to state 84
 
 
 State 67
 
-   36 instruction: LD operand • ',' REG
+   45 operand: '[' . REG ']'
+   46        | '[' . REG '+' NUM ']'
+   47        | '[' . REG '+' SYMBOL ']'
 
-    ','  shift, and go to state 85
+    REG  shift, and go to state 85
 
 
 State 68
 
-   37 instruction: ST REG • ',' operand
+   36 instruction: LD operand . ',' REG
 
     ','  shift, and go to state 86
 
 
 State 69
 
-   38 instruction: CSRRD SREG • ',' REG
+   37 instruction: ST REG . ',' operand
 
     ','  shift, and go to state 87
 
 
 State 70
 
-   39 instruction: CSRWR REG • ',' SREG
+   38 instruction: CSRRD SREG . ',' REG
 
     ','  shift, and go to state 88
 
 
 State 71
 
-   13 directive: TYPE SYMBOL • type
+   39 instruction: CSRWR REG . ',' SREG
 
-    FUNC  shift, and go to state 89
-    OBJ   shift, and go to state 90
-
-    type  go to state 91
+    ','  shift, and go to state 89
 
 
 State 72
 
-   65 label: SYMBOL ':' •
+   13 directive: TYPE SYMBOL . type
 
-    $default  reduce using rule 65 (label)
+    FUNC  shift, and go to state 90
+    OBJ   shift, and go to state 91
+
+    type  go to state 92
 
 
 State 73
 
-    0 $accept: program $end •
+   66 label: SYMBOL ':' .
 
-    $default  accept
+    $default  reduce using rule 66 (label)
 
 
 State 74
 
-    2 lines: lines ENDL • line
-    3      | lines ENDL •
+    0 $accept: program $end .
+
+    $default  accept
+
+
+State 75
+
+    2 lines: lines ENDL . line
+    3      | lines ENDL .
 
     GLOBAL   shift, and go to state 1
     EXTERN   shift, and go to state 2
@@ -878,376 +887,377 @@ State 74
     BGT      shift, and go to state 17
     PUSH     shift, and go to state 18
     POP      shift, and go to state 19
-    ADD      shift, and go to state 20
-    SUB      shift, and go to state 21
-    MUL      shift, and go to state 22
-    DIV      shift, and go to state 23
-    MOD      shift, and go to state 24
-    NOT      shift, and go to state 25
-    AND      shift, and go to state 26
-    OR       shift, and go to state 27
-    XOR      shift, and go to state 28
-    SHL      shift, and go to state 29
-    SHR      shift, and go to state 30
-    LD       shift, and go to state 31
-    ST       shift, and go to state 32
-    CSRRD    shift, and go to state 33
-    CSRWR    shift, and go to state 34
-    TYPE     shift, and go to state 35
-    SYMBOL   shift, and go to state 36
+    XCHG     shift, and go to state 20
+    ADD      shift, and go to state 21
+    SUB      shift, and go to state 22
+    MUL      shift, and go to state 23
+    DIV      shift, and go to state 24
+    MOD      shift, and go to state 25
+    NOT      shift, and go to state 26
+    AND      shift, and go to state 27
+    OR       shift, and go to state 28
+    XOR      shift, and go to state 29
+    SHL      shift, and go to state 30
+    SHR      shift, and go to state 31
+    LD       shift, and go to state 32
+    ST       shift, and go to state 33
+    CSRRD    shift, and go to state 34
+    CSRWR    shift, and go to state 35
+    TYPE     shift, and go to state 36
+    SYMBOL   shift, and go to state 37
 
     $default  reduce using rule 3 (lines)
 
-    line           go to state 92
-    directive      go to state 40
-    instruction    go to state 41
-    noop_opcode    go to state 42
-    tworeg_opcode  go to state 43
-    jmp_opcode     go to state 44
-    label          go to state 45
-
-
-State 75
-
-   35 instruction: tworeg_opcode REG • ',' REG
-
-    ','  shift, and go to state 93
+    line           go to state 93
+    directive      go to state 41
+    instruction    go to state 42
+    noop_opcode    go to state 43
+    tworeg_opcode  go to state 44
+    jmp_opcode     go to state 45
+    label          go to state 46
 
 
 State 76
 
-   34 instruction: jmp_opcode REG • ',' REG ',' jmp_operand
+   35 instruction: tworeg_opcode REG . ',' REG
 
     ','  shift, and go to state 94
 
 
 State 77
 
-    7 line: label directive •
+   34 instruction: jmp_opcode REG . ',' REG ',' jmp_operand
 
-    $default  reduce using rule 7 (line)
+    ','  shift, and go to state 95
 
 
 State 78
 
-    9 line: label instruction •
+    7 line: label directive .
 
-    $default  reduce using rule 9 (line)
+    $default  reduce using rule 7 (line)
 
 
 State 79
 
-   67 SYMLIST: SYMLIST ',' • SYMBOL
+    9 line: label instruction .
 
-    SYMBOL  shift, and go to state 95
+    $default  reduce using rule 9 (line)
 
 
 State 80
 
-   70 EXPR_LIST: EXPR_LIST ',' • SYMBOL
-   71          | EXPR_LIST ',' • NUM
+   68 SYMLIST: SYMLIST ',' . SYMBOL
 
     SYMBOL  shift, and go to state 96
-    NUM     shift, and go to state 97
 
 
 State 81
 
-   17 directive: EQU SYMBOL ',' • equ_expr
+   71 EXPR_LIST: EXPR_LIST ',' . SYMBOL
+   72          | EXPR_LIST ',' . NUM
 
-    SYMBOL  shift, and go to state 98
-    NUM     shift, and go to state 99
-
-    equ_expr     go to state 100
-    equ_primary  go to state 101
+    SYMBOL  shift, and go to state 97
+    NUM     shift, and go to state 98
 
 
 State 82
 
-   41 operand: '$' SYMBOL •
+   17 directive: EQU SYMBOL ',' . equ_expr
 
-    $default  reduce using rule 41 (operand)
+    SYMBOL  shift, and go to state 99
+    NUM     shift, and go to state 100
+
+    equ_expr     go to state 101
+    equ_primary  go to state 102
 
 
 State 83
 
-   40 operand: '$' NUM •
+   41 operand: '$' SYMBOL .
 
-    $default  reduce using rule 40 (operand)
+    $default  reduce using rule 41 (operand)
 
 
 State 84
 
-   45 operand: '[' REG • ']'
-   46        | '[' REG • '+' NUM ']'
-   47        | '[' REG • '+' SYMBOL ']'
+   40 operand: '$' NUM .
 
-    '+'  shift, and go to state 102
-    ']'  shift, and go to state 103
+    $default  reduce using rule 40 (operand)
 
 
 State 85
 
-   36 instruction: LD operand ',' • REG
+   45 operand: '[' REG . ']'
+   46        | '[' REG . '+' NUM ']'
+   47        | '[' REG . '+' SYMBOL ']'
 
-    REG  shift, and go to state 104
+    '+'  shift, and go to state 103
+    ']'  shift, and go to state 104
 
 
 State 86
 
-   37 instruction: ST REG ',' • operand
+   36 instruction: LD operand ',' . REG
 
-    SYMBOL  shift, and go to state 62
-    NUM     shift, and go to state 63
-    REG     shift, and go to state 64
-    '$'     shift, and go to state 65
-    '['     shift, and go to state 66
-
-    operand  go to state 105
+    REG  shift, and go to state 105
 
 
 State 87
 
-   38 instruction: CSRRD SREG ',' • REG
+   37 instruction: ST REG ',' . operand
 
-    REG  shift, and go to state 106
+    SYMBOL  shift, and go to state 63
+    NUM     shift, and go to state 64
+    REG     shift, and go to state 65
+    '$'     shift, and go to state 66
+    '['     shift, and go to state 67
+
+    operand  go to state 106
 
 
 State 88
 
-   39 instruction: CSRWR REG ',' • SREG
+   38 instruction: CSRRD SREG ',' . REG
 
-    SREG  shift, and go to state 107
+    REG  shift, and go to state 107
 
 
 State 89
 
-   19 type: FUNC •
+   39 instruction: CSRWR REG ',' . SREG
 
-    $default  reduce using rule 19 (type)
+    SREG  shift, and go to state 108
 
 
 State 90
 
-   20 type: OBJ •
+   19 type: FUNC .
 
-    $default  reduce using rule 20 (type)
+    $default  reduce using rule 19 (type)
 
 
 State 91
 
-   13 directive: TYPE SYMBOL type •
+   20 type: OBJ .
 
-    $default  reduce using rule 13 (directive)
+    $default  reduce using rule 20 (type)
 
 
 State 92
 
-    2 lines: lines ENDL line •
+   13 directive: TYPE SYMBOL type .
 
-    $default  reduce using rule 2 (lines)
+    $default  reduce using rule 13 (directive)
 
 
 State 93
 
-   35 instruction: tworeg_opcode REG ',' • REG
+    2 lines: lines ENDL line .
 
-    REG  shift, and go to state 108
+    $default  reduce using rule 2 (lines)
 
 
 State 94
 
-   34 instruction: jmp_opcode REG ',' • REG ',' jmp_operand
+   35 instruction: tworeg_opcode REG ',' . REG
 
     REG  shift, and go to state 109
 
 
 State 95
 
-   67 SYMLIST: SYMLIST ',' SYMBOL •
+   34 instruction: jmp_opcode REG ',' . REG ',' jmp_operand
 
-    $default  reduce using rule 67 (SYMLIST)
+    REG  shift, and go to state 110
 
 
 State 96
 
-   70 EXPR_LIST: EXPR_LIST ',' SYMBOL •
+   68 SYMLIST: SYMLIST ',' SYMBOL .
 
-    $default  reduce using rule 70 (EXPR_LIST)
+    $default  reduce using rule 68 (SYMLIST)
 
 
 State 97
 
-   71 EXPR_LIST: EXPR_LIST ',' NUM •
+   71 EXPR_LIST: EXPR_LIST ',' SYMBOL .
 
     $default  reduce using rule 71 (EXPR_LIST)
 
 
 State 98
 
-   24 equ_primary: SYMBOL •
+   72 EXPR_LIST: EXPR_LIST ',' NUM .
 
-    $default  reduce using rule 24 (equ_primary)
+    $default  reduce using rule 72 (EXPR_LIST)
 
 
 State 99
 
-   25 equ_primary: NUM •
+   24 equ_primary: SYMBOL .
 
-    $default  reduce using rule 25 (equ_primary)
+    $default  reduce using rule 24 (equ_primary)
 
 
 State 100
 
-   17 directive: EQU SYMBOL ',' equ_expr •
-   21 equ_expr: equ_expr • '+' equ_primary
-   22         | equ_expr • '-' equ_primary
+   25 equ_primary: NUM .
 
-    '+'  shift, and go to state 110
-    '-'  shift, and go to state 111
-
-    $default  reduce using rule 17 (directive)
+    $default  reduce using rule 25 (equ_primary)
 
 
 State 101
 
-   23 equ_expr: equ_primary •
+   17 directive: EQU SYMBOL ',' equ_expr .
+   21 equ_expr: equ_expr . '+' equ_primary
+   22         | equ_expr . '-' equ_primary
 
-    $default  reduce using rule 23 (equ_expr)
+    '+'  shift, and go to state 111
+    '-'  shift, and go to state 112
+
+    $default  reduce using rule 17 (directive)
 
 
 State 102
 
-   46 operand: '[' REG '+' • NUM ']'
-   47        | '[' REG '+' • SYMBOL ']'
+   23 equ_expr: equ_primary .
 
-    SYMBOL  shift, and go to state 112
-    NUM     shift, and go to state 113
+    $default  reduce using rule 23 (equ_expr)
 
 
 State 103
 
-   45 operand: '[' REG ']' •
+   46 operand: '[' REG '+' . NUM ']'
+   47        | '[' REG '+' . SYMBOL ']'
 
-    $default  reduce using rule 45 (operand)
+    SYMBOL  shift, and go to state 113
+    NUM     shift, and go to state 114
 
 
 State 104
 
-   36 instruction: LD operand ',' REG •
+   45 operand: '[' REG ']' .
 
-    $default  reduce using rule 36 (instruction)
+    $default  reduce using rule 45 (operand)
 
 
 State 105
 
-   37 instruction: ST REG ',' operand •
+   36 instruction: LD operand ',' REG .
 
-    $default  reduce using rule 37 (instruction)
+    $default  reduce using rule 36 (instruction)
 
 
 State 106
 
-   38 instruction: CSRRD SREG ',' REG •
+   37 instruction: ST REG ',' operand .
 
-    $default  reduce using rule 38 (instruction)
+    $default  reduce using rule 37 (instruction)
 
 
 State 107
 
-   39 instruction: CSRWR REG ',' SREG •
+   38 instruction: CSRRD SREG ',' REG .
 
-    $default  reduce using rule 39 (instruction)
+    $default  reduce using rule 38 (instruction)
 
 
 State 108
 
-   35 instruction: tworeg_opcode REG ',' REG •
+   39 instruction: CSRWR REG ',' SREG .
 
-    $default  reduce using rule 35 (instruction)
+    $default  reduce using rule 39 (instruction)
 
 
 State 109
 
-   34 instruction: jmp_opcode REG ',' REG • ',' jmp_operand
+   35 instruction: tworeg_opcode REG ',' REG .
 
-    ','  shift, and go to state 114
+    $default  reduce using rule 35 (instruction)
 
 
 State 110
 
-   21 equ_expr: equ_expr '+' • equ_primary
+   34 instruction: jmp_opcode REG ',' REG . ',' jmp_operand
 
-    SYMBOL  shift, and go to state 98
-    NUM     shift, and go to state 99
-
-    equ_primary  go to state 115
+    ','  shift, and go to state 115
 
 
 State 111
 
-   22 equ_expr: equ_expr '-' • equ_primary
+   21 equ_expr: equ_expr '+' . equ_primary
 
-    SYMBOL  shift, and go to state 98
-    NUM     shift, and go to state 99
+    SYMBOL  shift, and go to state 99
+    NUM     shift, and go to state 100
 
     equ_primary  go to state 116
 
 
 State 112
 
-   47 operand: '[' REG '+' SYMBOL • ']'
+   22 equ_expr: equ_expr '-' . equ_primary
 
-    ']'  shift, and go to state 117
+    SYMBOL  shift, and go to state 99
+    NUM     shift, and go to state 100
+
+    equ_primary  go to state 117
 
 
 State 113
 
-   46 operand: '[' REG '+' NUM • ']'
+   47 operand: '[' REG '+' SYMBOL . ']'
 
     ']'  shift, and go to state 118
 
 
 State 114
 
-   34 instruction: jmp_opcode REG ',' REG ',' • jmp_operand
+   46 operand: '[' REG '+' NUM . ']'
 
-    SYMBOL  shift, and go to state 55
-    NUM     shift, and go to state 56
-
-    jmp_operand  go to state 119
+    ']'  shift, and go to state 119
 
 
 State 115
 
-   21 equ_expr: equ_expr '+' equ_primary •
+   34 instruction: jmp_opcode REG ',' REG ',' . jmp_operand
 
-    $default  reduce using rule 21 (equ_expr)
+    SYMBOL  shift, and go to state 56
+    NUM     shift, and go to state 57
+
+    jmp_operand  go to state 120
 
 
 State 116
 
-   22 equ_expr: equ_expr '-' equ_primary •
+   21 equ_expr: equ_expr '+' equ_primary .
 
-    $default  reduce using rule 22 (equ_expr)
+    $default  reduce using rule 21 (equ_expr)
 
 
 State 117
 
-   47 operand: '[' REG '+' SYMBOL ']' •
+   22 equ_expr: equ_expr '-' equ_primary .
 
-    $default  reduce using rule 47 (operand)
+    $default  reduce using rule 22 (equ_expr)
 
 
 State 118
 
-   46 operand: '[' REG '+' NUM ']' •
+   47 operand: '[' REG '+' SYMBOL ']' .
 
-    $default  reduce using rule 46 (operand)
+    $default  reduce using rule 47 (operand)
 
 
 State 119
 
-   34 instruction: jmp_opcode REG ',' REG ',' jmp_operand •
+   46 operand: '[' REG '+' NUM ']' .
+
+    $default  reduce using rule 46 (operand)
+
+
+State 120
+
+   34 instruction: jmp_opcode REG ',' REG ',' jmp_operand .
 
     $default  reduce using rule 34 (instruction)

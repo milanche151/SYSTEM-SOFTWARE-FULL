@@ -486,11 +486,12 @@ void emulatorRun(Emulator* emu){
           memoryWriteWord(emu,(REG(a)+=(REG(b)+d)),REG(c),&isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
           break;
-        case STORE_MEM_INDIRECT:
+        case STORE_MEM_INDIRECT:{
           uint32_t address = memoryReadWord(emu,REG(a)+REG(b)+d,&isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
           memoryWriteWord(emu, address, REG(c), &isAligned);
           if(!isAligned)emu->status = EMU_STATUS_BUS_ERROR;
+        }
           break;
         default:
           emu->status = EMU_STATUS_BAD_MOD;
@@ -554,7 +555,7 @@ void emulatorRun(Emulator* emu){
       } break;
       }
       
-      // #define EMULATOR_STEP_DEBUG
+      //#define EMULATOR_STEP_DEBUG
 
       #ifdef EMULATOR_STEP_DEBUG
       static const char* instructionOpcodePrint[INSTR_COUNT] = {

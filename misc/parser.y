@@ -186,6 +186,7 @@ tworeg_opcode:
   | AND { $$ = INSTR_AND; }
   | XOR { $$ = INSTR_XOR; }
   | OR { $$ = INSTR_OR; }
+  | XCHG { $$ = INSTR_XCHG; }
   ;
 
 jmp_opcode:

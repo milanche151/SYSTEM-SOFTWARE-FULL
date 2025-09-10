@@ -5,3 +5,9 @@
 
 .extern ext1
 .extern ext2
+
+.section text
+x:
+    .word 10
+
+.equ x, 100
