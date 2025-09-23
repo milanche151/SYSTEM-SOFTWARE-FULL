@@ -45,6 +45,7 @@ or {return OR;}
 xor {return XOR;}
 shl {return SHL;}
 shr {return SHR;}
+inc {return INC;}
 ld {return LD;}
 st {return ST;}
 csrrd {return CSRRD;}

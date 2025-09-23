@@ -24,5 +24,4 @@ isr_terminal:
     pop %r2
     pop %r1
     ret
-  
 .end

@@ -93,14 +93,15 @@ extern int yydebug;
     ST = 292,
     CSRRD = 293,
     CSRWR = 294,
-    FUNC = 295,
-    OBJ = 296,
-    TYPE = 297,
-    SYMBOL = 298,
-    STRING = 299,
-    NUM = 300,
-    REG = 301,
-    SREG = 302
+    INC = 295,
+    FUNC = 296,
+    OBJ = 297,
+    TYPE = 298,
+    SYMBOL = 299,
+    STRING = 300,
+    NUM = 301,
+    REG = 302,
+    SREG = 303
   };
 #endif
 
@@ -119,7 +120,7 @@ union YYSTYPE
   Expression expr;
   symTableType type;
 
-#line 123 "inc/parser.tab.h"
+#line 124 "inc/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -31,6 +31,7 @@ extern struct Assembler *assembler;
 %debug
 
 %token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV MOD NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR 
+%token INC
 %token FUNC OBJ TYPE
 %token<string> SYMBOL
 %token<string> STRING
@@ -152,6 +153,8 @@ instruction:
   | ST REG ',' operand { instructionLoadStore(assembler, INSTR_STR, $4, $2); }
   | CSRRD SREG ',' REG { instructionCSRReadWrite(assembler, INSTR_CSRRD, $4, $2); }
   | CSRWR REG ',' SREG { instructionCSRReadWrite(assembler, INSTR_CSRWR, $2, $4); }
+  | INC REG { instructionIncReg(assembler, $2); }
+  | INC SYMBOL {  instructionIncSym(assembler, $2); }
   ;
 
 operand:

@@ -192,5 +192,7 @@ void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int re
 void instructionLoadStore(struct Assembler *assembler, InstrType instrType, Operand operand, int regD);
 void instructionCSRReadWrite(struct Assembler *assembler, InstrType instr_type, int regGPR, int regCSR);
 void instructionJump(struct Assembler *assembler, InstrType instrType, int reg1, int reg2, Operand operand);
+void instructionIncReg(struct Assembler *assembler, int reg);
+void instructionIncSym(struct Assembler *assembler, char* symbol);
 
 #endif

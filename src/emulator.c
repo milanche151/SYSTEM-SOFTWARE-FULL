@@ -555,7 +555,7 @@ void emulatorRun(Emulator* emu){
       } break;
       }
       
-      //#define EMULATOR_STEP_DEBUG
+      #define EMULATOR_STEP_DEBUG
 
       #ifdef EMULATOR_STEP_DEBUG
       static const char* instructionOpcodePrint[INSTR_COUNT] = {

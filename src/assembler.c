@@ -644,7 +644,35 @@ void instructionTworeg(struct Assembler *assembler, InstrType instr_type, int re
 static bool canFitIn12bit(int dist){
   return dist >= -0x0800 && dist < 0x0800;
 }
-
+void instructionIncReg(struct Assembler *assembler, int reg){
+  if(assembler->sections.size > 0){
+    insertGenericInstruction(assembler, ASM_INSTR_LOAD, ASM_LOAD_REG_DISP, reg, reg, 0, 1);
+    if(reg == 0){
+      printf("You can't change register zero.");
+      assembler->correct = false; 
+    }
+  }
+  else{
+    assembler->correct = false;
+  }
+}
+void instructionIncSym(struct Assembler *assembler, char* symbol){
+  if(assembler->sections.size > 0){
+    Section* current_section = &assembler->sections.data[assembler->sections.size - 1];
+    instructionOnereg(assembler, INSTR_PUSH, 1);
+    Operand operand = {
+      .type = OPERAND_TYPE_MEMDIR_SYM,
+      .symbol = symbol
+    };
+    instructionLoadStore(assembler, INSTR_LD, operand, 1);
+    instructionIncReg(assembler,1);
+    instructionLoadStore(assembler, INSTR_STR, operand, 1);
+    instructionOnereg(assembler, INSTR_POP,1); 
+  }
+  else{
+    assembler->correct = false;
+  }
+}
 void instructionLoadStore(struct Assembler *assembler,InstrType instrType, Operand operand, int regD){
   InstructionOpcode curr_opcode;
   if(instrType == INSTR_LD)
