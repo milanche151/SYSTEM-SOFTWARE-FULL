@@ -14,6 +14,7 @@ int curr_line = 1;
 "FUNC" {return FUNC;}
 "OBJ" {return OBJ;}
 ".global" {return GLOBAL;}
+".weak" {return WEAK;}
 ".extern" {return EXTERN;}
 ".section" {return SECTION;}
 ".type" {return TYPE;}

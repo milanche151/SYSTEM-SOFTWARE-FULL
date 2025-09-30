@@ -30,6 +30,7 @@ typedef struct ObjFile {
 typedef struct GlobalSym{
   size_t file_index;
   size_t symtbl_index;
+  bool multiple_weak;
 } GlobalSym;
 
 typedef struct SectionPlace{

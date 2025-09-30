@@ -58,6 +58,7 @@ VECTOR_DECLARE(VecRelocation, Relocation);
 typedef enum{
   BIND_TYPE_LOCAL,
   BIND_TYPE_GLOBAL,
+  BIND_TYPE_WEAK,
 
   BIND_TYPE_COUNT,
 }symTableBind;
@@ -169,14 +170,14 @@ void assemblerPrintObjectFile(const struct Assembler *assembler,FILE* file);
 void insertSymSection(struct Assembler* assembler, char* name);
 void insertSymLabel(struct Assembler* assembler, char* name);
 void insertSymExtern(struct Assembler* assembler, char *name);
-void declareSymGlobal(struct Assembler* assembler, char *name);
+void declareSymGlobal(struct Assembler* assembler, char *name, bool isWeak);
 
 void printSymTable(const struct Assembler* assembler);
 void initSymbolTable(struct Assembler* assembler);
 
 //_________________________________________directives____________________________________________________
 void section(struct Assembler* assembler, char* symbol);
-void global(struct Assembler* assembler, VecString symlist);
+void global(struct Assembler* assembler, VecString symlist, bool isWeak);
 void type(struct Assembler* assembler, char* sym, symTableType type);
 void word(struct Assembler* assembler, VecExpr expresions);
 void ascii(struct Assembler* assembler, char* string);

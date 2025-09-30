@@ -30,7 +30,7 @@ extern struct Assembler *assembler;
 
 %debug
 
-%token GLOBAL EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV MOD NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR 
+%token GLOBAL WEAK EXTERN ENDL SECTION COLON WORD SKIP ASCII EQU END HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD SUB MUL DIV MOD NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR 
 %token INC
 %token FUNC OBJ TYPE
 %token<string> SYMBOL
@@ -74,7 +74,11 @@ directive:
   }
   |
   GLOBAL SYMLIST {
-    global(assembler,$2);
+    global(assembler,$2,false);
+  }
+  |
+  WEAK SYMLIST {
+    global(assembler,$2,true);
   }
   |
   TYPE SYMBOL type {

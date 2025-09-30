@@ -24,6 +24,7 @@ static const char *symbol_type_print[SYM_TBL_TYPE_COUNT] = {
 static const char *symbol_bind_print[BIND_TYPE_COUNT] = {
   [BIND_TYPE_LOCAL] = "LOCAL",
   [BIND_TYPE_GLOBAL] = "GLOBAL",
+  [BIND_TYPE_WEAK] = "WEAK"
 };
 
 void insertSymSection(struct Assembler* assembler, char* name){
@@ -196,7 +197,7 @@ void insertSymExtern(struct Assembler* assembler, char *name){
   }
 }
 
-void declareSymGlobal(struct Assembler* assembler, char *name){
+void declareSymGlobal(struct Assembler* assembler, char *name, bool isWeak){
   SymTableRow* found = NULL;
   for(size_t i = 0; i < assembler->symbolTable.size; i++){
     SymTableRow* current = &assembler->symbolTable.data[i];
@@ -206,7 +207,7 @@ void declareSymGlobal(struct Assembler* assembler, char *name){
       break;
     }
   }
-
+  symTableBind target_bind = isWeak ? BIND_TYPE_WEAK:BIND_TYPE_GLOBAL;
   if(found != NULL){
     // extern symbol CAN'T be declared global
     if(found->section == EXTERN_SECTION){
@@ -220,7 +221,13 @@ void declareSymGlobal(struct Assembler* assembler, char *name){
     }
     // okay
     else {
-      found->bind = BIND_TYPE_GLOBAL;
+      if (found->bind == BIND_TYPE_LOCAL || found->bind == target_bind){
+        found->bind = target_bind;
+      }
+      else{
+        printf("ERROR: Symbol declared %s after being declared %s.\n",symbol_bind_print[target_bind],symbol_bind_print[found->bind]);
+        assembler->correct = false;
+      }
     }
   }
   else {
@@ -233,7 +240,7 @@ void declareSymGlobal(struct Assembler* assembler, char *name){
         .value = 0,
         .type = SYM_TBL_TYPE_NOTYPE,
         .defined = false,
-        .bind = BIND_TYPE_GLOBAL
+        .bind = target_bind
       }
     );
   }
@@ -297,9 +304,9 @@ void section(struct Assembler* assembler, char* symbol){
   VecSectionPush(&assembler->sections, new_section);
 }
 
-void global(struct Assembler* assembler, VecString symlist){
+void global(struct Assembler* assembler, VecString symlist,bool isWeak){
  for(int i = 0; i < symlist.size; i++){
-    declareSymGlobal(assembler, symlist.data[i]);
+    declareSymGlobal(assembler, symlist.data[i], isWeak);
  }
 }
 

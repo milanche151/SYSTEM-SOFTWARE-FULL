@@ -228,9 +228,12 @@ static void emulatorPrint(const Emulator* emu){
   }
   printf("\n");
 
-  printf("Processor registers:\n");
+  printf("-----------------------------------------------------------------\n");
+  printf("Emulated processor executed halt instruction\n");
+  printf("Emulated processor state:\n");
   for (size_t i = 0; i < 16; i++){
-    printf("r%-2lu = %08x\n",i,emu->cpu.reg[i]);
+    printf("r%-2lu = 0x%08x ",i,emu->cpu.reg[i]);
+    if(i%4==3)printf("\n");
   }
   printf("\n");
   printf("Timer Period:%ld miliseconds\n",emu->timer.set_time);
@@ -555,7 +558,7 @@ void emulatorRun(Emulator* emu){
       } break;
       }
       
-      #define EMULATOR_STEP_DEBUG
+      //#define EMULATOR_STEP_DEBUG
 
       #ifdef EMULATOR_STEP_DEBUG
       static const char* instructionOpcodePrint[INSTR_COUNT] = {

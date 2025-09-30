@@ -155,12 +155,32 @@ bool LinkerAddGlobalSymbol(Linker *linker, VecUnifiedSection *sections, size_t f
   }
 
   for(size_t i = 0; i < linker->globalSyms.size; i++){
-    GlobalSym global_id = linker->globalSyms.data[i];
-    SymTableRow *curr_global_sym = &linker->files[global_id.file_index].symbols[global_id.symtbl_index];
+    GlobalSym *global_id = &linker->globalSyms.data[i];
+    SymTableRow *curr_global_sym = &linker->files[global_id->file_index].symbols[global_id->symtbl_index];
 
     if(strcmp(curr_global_sym->name, curr_sym->name) == 0){
-      printf("Symbol %s defined multiple times.\n", curr_sym->name);
-      return false;
+      if(curr_sym->bind == BIND_TYPE_GLOBAL && curr_global_sym->bind == BIND_TYPE_GLOBAL){
+        printf("Symbol %s defined multiple times.\n", curr_sym->name);
+        return false;
+      }
+      else if (curr_sym->bind == BIND_TYPE_WEAK && curr_global_sym->bind == BIND_TYPE_WEAK){
+        global_id->multiple_weak = true;
+        return true;
+      }
+      else if (curr_sym->bind == BIND_TYPE_WEAK && curr_global_sym->bind == BIND_TYPE_GLOBAL){
+        return true;
+      }
+      else if (curr_sym->bind == BIND_TYPE_GLOBAL && curr_global_sym->bind == BIND_TYPE_WEAK){
+        *global_id =   (GlobalSym){
+          .file_index = file_idx,
+          .symtbl_index = sym_idx,
+          .multiple_weak = false
+        };
+        return true;
+      }
+      else{
+        assert(0);
+      }
     }
   }
 
@@ -169,6 +189,7 @@ bool LinkerAddGlobalSymbol(Linker *linker, VecUnifiedSection *sections, size_t f
     (GlobalSym){
       .file_index = file_idx,
       .symtbl_index = sym_idx,
+      .multiple_weak = false
     }
   );
 
@@ -372,7 +393,7 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
   for(size_t i = 0; i < linker.n_files; i++){
     for(size_t j = 0; j < linker.files[i].n_syms; j++){
       SymTableRow *curr_sym = &linker.files[i].symbols[j];
-      if(curr_sym->bind == BIND_TYPE_GLOBAL && curr_sym->section != EXTERN_SECTION){
+      if((curr_sym->bind == BIND_TYPE_GLOBAL || curr_sym->bind == BIND_TYPE_WEAK) && curr_sym->section != EXTERN_SECTION){
         if(!LinkerAddGlobalSymbol(&linker, NULL, i, j)){
           linker.correct = false;
         }
@@ -380,6 +401,16 @@ Linker LinkerCreate(FILE *input_files[], size_t n_input_files, SectionPlace* pla
     }
     
   }
+
+  //check multiple weaks
+  for (size_t i = 0; i < linker.globalSyms.size; i++){
+    GlobalSym global_id = linker.globalSyms.data[i];
+    if(global_id.multiple_weak){
+      printf("Symbol %s defined as weak multiple times.\n",linker.files[global_id.file_index].symbols[global_id.symtbl_index].name);
+      linker.correct = false;
+    }
+  }
+  
 
   // check if all extern symbols are defined
   for(size_t i = 0; i < linker.n_files; i++){
@@ -657,13 +688,23 @@ Linker LinkerCreateRelocatable(FILE *input_files[], size_t n_input_files, FILE *
   for(size_t i = 0; i < linker.n_files; i++){
     for(size_t j = 0; j < linker.files[i].n_syms; j++){
       SymTableRow *curr_sym = &linker.files[i].symbols[j];
-      if(curr_sym->bind == BIND_TYPE_GLOBAL && curr_sym->section != EXTERN_SECTION){
+      if((curr_sym->bind == BIND_TYPE_GLOBAL || curr_sym->bind == BIND_TYPE_WEAK) && curr_sym->section != EXTERN_SECTION){
         if(!LinkerAddGlobalSymbol(&linker, &unifiedSections, i, j)){
           linker.correct = false;
         }
       }
     }
   }
+
+  //check multiple weaks
+  for (size_t i = 0; i < linker.globalSyms.size; i++){
+    GlobalSym global_id = linker.globalSyms.data[i];
+    if(global_id.multiple_weak){
+      printf("Symbol %s defined as weak multiple times.\n",linker.files[global_id.file_index].symbols[global_id.symtbl_index].name);
+      linker.correct = false;
+    }
+  }
+
   VecString externNames = VecStringCreate();
   // check if all extern symbols are defined
   for(size_t i = 0; i < linker.n_files; i++){
